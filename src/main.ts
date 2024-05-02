@@ -1,4 +1,5 @@
 import './style.css';
+import './utils/Errors';
 
 import * as THREE from 'three';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
@@ -7,6 +8,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { NEUTRAL_400, NEUTRAL_50, NEUTRAL_950, SLATE_700 } from './utils/Color';
 
 import HostObject from './feature/host/HostObject';
+import AnimationFeature from './feature/host/AnimationFeature';
 
 const paths = {
   character: 'assets/glTF/characters/adult_male/luke/luke.gltf',
@@ -223,5 +225,18 @@ function createHost(opts: {
 }) {
   const host = new HostObject({ owner: opts.owner, clock: opts.clock });
   renderFn.push(() => host.update());
+
+  const animFeature = new AnimationFeature(host);
+  host.addFeature(animFeature);
+
+  // Base Layer
+  {
+    const baseLayer = animFeature.addLayer({ name: 'Base' });
+    const baseIdleHandle = baseLayer.addSingleAnimation({
+      clip: opts.clips.stand_idle[0],
+    });
+    baseLayer.playAnimation(baseIdleHandle);
+  }
+
   return host;
 }
