@@ -95,12 +95,6 @@ button:focus-visible {
   }
 }
 
-.red-bg {
-  background-color: salmon;
-}
-
-.absolute-elem {
-  position: absolute;
-  left: 1rem;
-  top: 1rem;
-}
+.absolute { position: absolute; }
+.top-1 { top: 0.25rem; }
+.left-1 { left: 0.25rem; }
