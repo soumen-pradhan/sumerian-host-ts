@@ -1,9 +1,12 @@
 import './style.css';
 
 import * as THREE from 'three';
-import * as TWEEN from '@tweenjs/tween.js';
-import { NEUTRAL_400, NEUTRAL_50, NEUTRAL_950, SLATE_700 } from './utils/Color';
 import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import * as TWEEN from '@tweenjs/tween.js';
+
+import { NEUTRAL_400, NEUTRAL_50, NEUTRAL_950, SLATE_700 } from './utils/Color';
+
+import HostObject from './feature/host/HostObject';
 
 const paths = {
   character: 'assets/glTF/characters/adult_male/luke/luke.gltf',
@@ -40,6 +43,8 @@ async function main() {
 
   character.position.set(0, 0, 0);
   // character.rotateY(-0.5);
+
+  const host = createHost({ owner: character, clock, clips });
 
   // initUx
   {
@@ -209,4 +214,14 @@ async function loadCharacter(
   const clips = clipMap as AnimationClipMap;
 
   return { character, clips, bindPoseOffset };
+}
+
+function createHost(opts: {
+  owner: GLTF['scene'];
+  clock: THREE.Clock;
+  clips: AnimationClipMap;
+}) {
+  const host = new HostObject({ owner: opts.owner, clock: opts.clock });
+  renderFn.push(() => host.update());
+  return host;
 }
