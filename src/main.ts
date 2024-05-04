@@ -235,7 +235,76 @@ function createHost(opts: {
     const baseIdleHandle = baseLayer.addSingleAnimation({
       clip: opts.clips.stand_idle[0],
     });
-    baseLayer.playAnimation(baseIdleHandle);
+    baseLayer.playAnimation(baseIdleHandle, { transitionTimeS: 2 });
+  }
+
+  // Face Layer. No Effect ??
+  {
+    const faceLayer = animFeature.addLayer({
+      name: 'Face',
+      blendMode: 'Additive',
+    });
+
+    const faceIdleClip = opts.clips.face_idle[0];
+    THREE.AnimationUtils.makeClipAdditive(faceIdleClip);
+    const subclip = THREE.AnimationUtils.subclip(
+      faceIdleClip,
+      faceIdleClip.name,
+      1,
+      faceIdleClip.duration * 30,
+      30
+    );
+
+    const faceIdleHandle = faceLayer.addSingleAnimation({ clip: subclip });
+    faceLayer.playAnimation(faceIdleHandle, { transitionTimeS: 4 });
+  }
+
+  // Blink Layer
+  /*
+  {
+    const blinkLayer = animFeature.addLayer({
+      name: 'Blink',
+      blendMode: 'Additive',
+    });
+
+    const blinkClips = opts.clips.blink;
+    blinkClips.forEach((c) => THREE.AnimationUtils.makeClipAdditive(c));
+
+    const blinkHandle = blinkLayer.addRandomAnimation({
+      name: 'blink',
+      playIntervalS: 3,
+      subStateOpts: blinkClips.map((clip) => {
+        const clipChecked = blinkLayer.mixer.existingAction(clip) ? clip.clone() : clip;
+        const action = blinkLayer.mixer.clipAction(clipChecked);
+
+        return {
+          name: clipChecked.name,
+          action,
+          loopCount: 1,
+        };
+      }),
+    });
+
+    blinkLayer.playAnimation(blinkHandle);
+  }
+  */
+
+  // Talking Idle Layer
+  {
+    const talkingIdleLayer = animFeature.addLayer({
+      name: 'Talk',
+      transitionTimeS: 0.75,
+      blendMode: 'Additive',
+    });
+
+    // TODO add a weight to the layer
+
+    const standTalkClip = opts.clips.lipsync[14];
+    const talkingAnimHandle = talkingIdleLayer.addSingleAnimation({
+      clip: THREE.AnimationUtils.makeClipAdditive(standTalkClip),
+    });
+
+    talkingIdleLayer.playAnimation(talkingAnimHandle);
   }
 
   return host;

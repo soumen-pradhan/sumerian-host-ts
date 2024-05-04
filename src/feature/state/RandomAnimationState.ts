@@ -1,80 +1,74 @@
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
-import AbstractState from './state/AbstractState';
-import SingleState, { SingleStateOpts } from './state/SingleState';
-import TransitionState from './state/TransitionState';
-import RandomAnimationState from './state/RandomAnimationState';
+import AbstractState from './AbstractState';
+import SingleState from './SingleState';
+import TransitionState from './TransitionState';
 
-export default class AnimationLayer {
+export type RandomAnimationStateOpts = {
   name: string;
-  mixer: THREE.AnimationMixer;
-  weight: number = 1; // TODO Propagate it down somehow to the states
+  playIntervalS?: number;
+  transitionTimeS?: number;
+  subStates: SingleState[];
+};
 
-  // A global config for all states in this layer. Individual states may override this.
-  #transitionTimeS: number = 0;
-  #blendMode: BlendMode = 'Override';
+export default class RandomAnimationState extends AbstractState {
+  playIntervalS = 3;
+  #transitionTimeS = 0;
 
-  constructor(opts: {
-    name: string;
-    mixer: THREE.AnimationMixer;
-    transitionTimeS?: number;
-    blendMode?: BlendMode;
-  }) {
-    this.name = opts.name;
-    this.mixer = opts.mixer;
+  constructor(opts: RandomAnimationStateOpts) {
+    super({ name: opts.name });
+
+    this.playIntervalS = opts.playIntervalS ?? 3;
     this.#transitionTimeS = opts.transitionTimeS ?? 0;
-    this.#blendMode = opts.blendMode ?? 'Override';
+    opts.subStates.forEach((s) => this.#addState(s));
 
     this.#transitionState = new TransitionState({ name: `${this.name}:transition` });
   }
 
-  addSingleAnimation(opts: {
-    clip: THREE.AnimationClip;
-    blendMode?: BlendMode;
-    weight?: number;
-    loopCount?: number;
-  }): string {
-    const clip = this.mixer.existingAction(opts.clip) ? opts.clip.clone() : opts.clip;
+  //#region weightTween
+  #dummyTween = new TWEEN.Tween({}).duration(0);
 
-    const action = this.mixer.clipAction(clip);
+  override setWeightTween(
+    _toWeight: number,
+    _seconds = 0,
+    _easingFn = TWEEN.Easing.Linear.None
+  ): TWEEN.Tween<{}> {
+    // A state has to be randomly chosen, done in play(), this is to satisfy the constraint
+    return this.#dummyTween;
+  }
+  //#endregion
 
-    const state = new SingleState({
-      name: clip.name,
-      action,
-      blendMode: opts.blendMode ?? this.#blendMode,
-      weight: opts.weight,
-      loopCount: opts.loopCount,
-    });
-
-    const animationStateHandle = this.#addState(state);
-    return animationStateHandle;
+  override play(): void {
+    this.#playRandomAnimation();
   }
 
-  addRandomAnimation(opts: {
-    name: string;
-    playIntervalS?: number;
-    blendMode?: BlendMode;
-    subStateOpts: SingleStateOpts[];
-  }): string {
-    const subStates = opts.subStateOpts.map((opt) => {
-      return new SingleState({
-        name: opt.name,
-        action: opt.action,
-        blendMode: opt.blendMode ?? this.#blendMode,
-        weight: opt.weight,
-        loopCount: opt.loopCount,
-      });
-    });
+  #playRandomAnimation() {
+    const waitTimeS = THREE.MathUtils.randFloat(
+      this.playIntervalS / 4,
+      this.playIntervalS * 2
+    );
 
-    const state = new RandomAnimationState({
-      name: opts.name,
-      playIntervalS: opts.playIntervalS,
-      subStates,
-    });
+    new TWEEN.Tween({})
+      .duration(waitTimeS * 1000)
+      .onComplete(() => this.#playRandomAnimation())
+      .start();
 
-    const randomAnimStateHandle = this.#addState(state);
-    return randomAnimStateHandle;
+    const randomState = this.#states[THREE.MathUtils.randInt(0, this.#states.length - 1)];
+
+    this.playAnimation(randomState.name);
   }
+
+  // override pause(): boolean {}
+
+  // override resume(): void {}
+
+  // override cancel(): void {}
+
+  // override stop(): void {}
+
+  // override discard(): void {}
+
+  // override deactivate(): void {}
 
   //#region StateContainerInterface
 
@@ -121,7 +115,7 @@ export default class AnimationLayer {
       opts.transitionTimeS ?? this.#transitionTimeS,
       opts.easingFn ?? TWEEN.Easing.Linear.None
     );
-    console.trace(`[${this.name}:Layer] playAnimation()`, this.#currentState);
+    console.log(`[${this.name}:Layer] playAnimation() state prep`, this.#currentState);
     this.#currentState?.play();
   }
 
