@@ -37,7 +37,7 @@ main();
 async function main() {
   const { scene, camera, clock } = createScene();
 
-  const { character, clips, bindPoseOffset } = await loadCharacter(
+  const { character, clips, bindPoseOffsetClip } = await loadCharacter(
     scene,
     paths.character,
     paths.animation
@@ -46,7 +46,7 @@ async function main() {
   character.position.set(0, 0, 0);
   // character.rotateY(-0.5);
 
-  const host = createHost({ owner: character, clock, clips });
+  const host = createHost({ owner: character, clock, clips, bindPoseOffsetClip });
 
   // initUx
   {
@@ -172,7 +172,7 @@ async function loadCharacter(
 ): Promise<{
   character: THREE.Group<THREE.Object3DEventMap>;
   clips: AnimationClipMap;
-  bindPoseOffset: THREE.AnimationClip;
+  bindPoseOffsetClip: THREE.AnimationClip;
 }> {
   const gltfLoader = new GLTFLoader();
 
@@ -186,9 +186,9 @@ async function loadCharacter(
   scene.add(character);
 
   // Make the offset pose additive
-  const [bindPoseOffset] = characterGLTF.animations;
-  if (bindPoseOffset) {
-    THREE.AnimationUtils.makeClipAdditive(bindPoseOffset);
+  const [bindPoseOffsetClip] = characterGLTF.animations;
+  if (bindPoseOffsetClip) {
+    THREE.AnimationUtils.makeClipAdditive(bindPoseOffsetClip);
   }
 
   // Cast shadows
@@ -215,13 +215,14 @@ async function loadCharacter(
 
   const clips = clipMap as AnimationClipMap;
 
-  return { character, clips, bindPoseOffset };
+  return { character, clips, bindPoseOffsetClip };
 }
 
 function createHost(opts: {
   owner: GLTF['scene'];
   clock: THREE.Clock;
   clips: AnimationClipMap;
+  bindPoseOffsetClip?: THREE.AnimationClip;
 }) {
   const host = new HostObject({ owner: opts.owner, clock: opts.clock });
   renderFn.push(() => host.update());
@@ -235,7 +236,7 @@ function createHost(opts: {
     const baseIdleHandle = baseLayer.addSingleAnimation({
       clip: opts.clips.stand_idle[0],
     });
-    baseLayer.playAnimation(baseIdleHandle, { transitionTimeS: 2 });
+    baseLayer.playAnimation(baseIdleHandle);
   }
 
   // Face Layer. No Effect ??
@@ -305,6 +306,58 @@ function createHost(opts: {
     });
 
     talkingIdleLayer.playAnimation(talkingAnimHandle);
+  }
+
+  // Viseme Layer
+  {
+    const visemeLayer = animFeature.addLayer({
+      name: 'Viseme',
+      transitionTimeS: 0.12,
+      blendMode: 'Additive',
+    });
+
+    // TODO Layer Weight
+
+    const visemeBlendHandle = visemeLayer.addFreeBlendAnimation({
+      name: 'visemes',
+      blendStatesOpts: opts.clips.lipsync.map((clip) => {
+        THREE.AnimationUtils.makeClipAdditive(clip);
+
+        const subClip = THREE.AnimationUtils.subclip(clip, clip.name, 1, 2, 30);
+        const clipChecked = visemeLayer.mixer.existingAction(subClip)
+          ? subClip.clone()
+          : subClip;
+        const action = visemeLayer.mixer.clipAction(clipChecked);
+
+        return {
+          name: clipChecked.name,
+          action,
+          weight: 0,
+        };
+      }),
+    });
+
+    visemeLayer.playAnimation(visemeBlendHandle);
+  }
+
+  // bindPoseOffset if it exists. No Effect ??
+  if (opts.bindPoseOffsetClip) {
+    const bindPoseLayer = animFeature.addLayer({
+      name: 'BindPoseOffset',
+      blendMode: 'Additive',
+    });
+
+    const bindPoseHandle = bindPoseLayer.addSingleAnimation({
+      clip: THREE.AnimationUtils.subclip(
+        opts.bindPoseOffsetClip,
+        opts.bindPoseOffsetClip.name,
+        1,
+        2,
+        30
+      ),
+    });
+
+    bindPoseLayer.playAnimation(bindPoseHandle);
   }
 
   return host;

@@ -4,6 +4,7 @@ import AbstractState from './state/AbstractState';
 import SingleState, { SingleStateOpts } from './state/SingleState';
 import TransitionState from './state/TransitionState';
 import RandomAnimationState from './state/RandomAnimationState';
+import FreeBlendState from './state/FreeBlendState';
 
 export default class AnimationLayer {
   name: string;
@@ -74,6 +75,25 @@ export default class AnimationLayer {
 
     const randomAnimStateHandle = this.#addState(state);
     return randomAnimStateHandle;
+  }
+
+  addFreeBlendAnimation(opts: {
+    name: string;
+    blendStatesOpts: SingleStateOpts[];
+  }): string {
+    const blendStates = opts.blendStatesOpts.map((opt) => {
+      return new SingleState({
+        name: opt.name,
+        action: opt.action,
+        blendMode: opt.blendMode ?? this.#blendMode,
+        weight: opt.weight,
+        loopCount: opt.loopCount,
+      });
+    });
+
+    const state = new FreeBlendState({ name: opts.name, blendStates });
+    const freeBlendHandle = this.#addState(state);
+    return freeBlendHandle;
   }
 
   //#region StateContainerInterface
