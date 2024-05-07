@@ -9,9 +9,10 @@ import { NEUTRAL_400, NEUTRAL_50, NEUTRAL_950, SLATE_700 } from './utils/Color';
 
 import HostObject from './feature/host/HostObject';
 import AnimationFeature from './feature/host/AnimationFeature';
+import ModelConstants from './utils/ModelConstants';
 
 const paths = {
-  character: 'assets/glTF/characters/adult_male/luke/luke.gltf',
+  luke: 'assets/glTF/characters/adult_male/luke/luke.gltf',
   animation: {
     blink: 'assets/glTF/animations/adult_male/blink.glb',
     emote: 'assets/glTF/animations/adult_male/emote.glb',
@@ -37,16 +38,27 @@ main();
 async function main() {
   const { scene, camera, clock } = createScene();
 
-  const { character, clips, bindPoseOffsetClip } = await loadCharacter(
-    scene,
-    paths.character,
-    paths.animation
-  );
+  const {
+    character: charLuke,
+    clips,
+    bindPoseOffsetClip,
+  } = await loadCharacter(scene, paths.luke, paths.animation);
 
-  character.position.set(0, 0, 0);
+  const lukeAudioAttach1 =
+    charLuke.getObjectByName(ModelConstants.audioAttachJoint1) ??
+    throwErr(`The loaded models lack properties: ${ModelConstants.audioAttachJoint1}`);
+
+  charLuke.position.set(0, 0, 0);
   // character.rotateY(-0.5);
 
-  const host = createHost({ owner: character, clock, clips, bindPoseOffsetClip });
+  const host = createHost({
+    owner: charLuke,
+    clock,
+    camera,
+    clips,
+    bindPoseOffsetClip,
+    audioAttach: lukeAudioAttach1,
+  });
 
   // initUx
   {
@@ -221,11 +233,15 @@ async function loadCharacter(
 function createHost(opts: {
   owner: GLTF['scene'];
   clock: THREE.Clock;
+  camera: THREE.Camera;
   clips: AnimationClipMap;
   bindPoseOffsetClip?: THREE.AnimationClip;
+  audioAttach: THREE.Object3D<THREE.Object3DEventMap>;
 }) {
   const host = new HostObject({ owner: opts.owner, clock: opts.clock });
   renderFn.push(() => host.update());
+
+  //#region Aniamtion Feature
 
   const animFeature = new AnimationFeature(host);
   host.addFeature(animFeature);
@@ -359,6 +375,8 @@ function createHost(opts: {
 
     bindPoseLayer.playAnimation(bindPoseHandle);
   }
+
+  //#endregion
 
   return host;
 }
