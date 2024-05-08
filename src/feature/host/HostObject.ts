@@ -4,6 +4,9 @@ import AbstractHostFeature from './AbstractHostFeature';
 
 export default class HostObject {
   owner: GLTF['scene'];
+
+  // similar to Java 8's LinkedHashMap
+  #features: AbstractHostFeature[] = [];
   #featureMap = new Map<string, AbstractHostFeature>();
 
   #clock: THREE.Clock;
@@ -28,7 +31,7 @@ export default class HostObject {
   update() {
     const currentTimeMs = this.nowMs;
     const deltaMs = this.deltaTimeMs;
-    this.#featureMap.forEach((feature) => feature.update(deltaMs));
+    this.#features.forEach((feature) => feature.update(deltaMs));
     this.#lastUpdateMs = currentTimeMs;
   }
 
@@ -38,5 +41,6 @@ export default class HostObject {
     }
 
     this.#featureMap.set(feature.name, feature);
+    this.#features.push(feature);
   }
 }
