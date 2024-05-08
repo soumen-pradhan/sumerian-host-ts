@@ -10,6 +10,9 @@ import { NEUTRAL_400, NEUTRAL_50, NEUTRAL_950, SLATE_700 } from './utils/Color';
 import HostObject from './feature/host/HostObject';
 import AnimationFeature from './feature/host/AnimationFeature';
 import ModelConstants from './utils/ModelConstants';
+import Msg from './utils/Msg';
+import TextToSpeakFeature from './feature/host/TextToSpeakFeature';
+import Deferred from './utils/Deferred';
 
 const paths = {
   luke: 'assets/glTF/characters/adult_male/luke/luke.gltf',
@@ -33,7 +36,46 @@ const renderFn: ((...args: any[]) => any)[] = [];
 let renderLoop: (timeMs: DOMHighResTimeStamp) => void = (_timeMs) => {};
 let renderHandle: number | undefined = undefined;
 
-main();
+(function userInteraction() {
+  const consentButton = document.createElement('button');
+  consentButton.replaceChildren('I consent');
+  consentButton.title = 'Required for audio autoplay';
+
+  consentButton.addEventListener('click', () => {
+    consentButton.hidden = true;
+    main();
+  });
+
+  document.body.append(consentButton);
+})();
+
+function test() {
+  const sleep = (ms: number) => new Promise<void>((res) => setTimeout(() => res(), ms));
+
+  const startPromiseButton = document.createElement('button');
+  startPromiseButton.replaceChildren('Start');
+
+  let def = Deferred.canceled('');
+
+  startPromiseButton.addEventListener('click', () => {
+    def = new Deferred((res, rej, cancel) => {
+      sleep(3000)
+        .then(() => res('Deferred done'))
+        .catch((e) => rej(e));
+    });
+
+    def.then(console.log);
+  });
+
+  const cancelButton = document.createElement('button');
+  cancelButton.replaceChildren('Cancel');
+
+  cancelButton.addEventListener('click', () => {
+    def.cancel('Deferred canceled');
+  });
+
+  document.body.append(startPromiseButton, cancelButton);
+}
 
 async function main() {
   const { scene, camera, clock } = createScene();
@@ -51,7 +93,7 @@ async function main() {
   charLuke.position.set(0, 0, 0);
   // character.rotateY(-0.5);
 
-  const host = createHost({
+  const { host, textToSpeakFeature } = createHost({
     owner: charLuke,
     clock,
     camera,
@@ -62,20 +104,47 @@ async function main() {
 
   // initUx
   {
-    // const button = document.createElement('button');
-    // button.classList.add('absolute', 'top-1', 'left-1');
-    // button.addEventListener('click', () => {
-    //   if (renderHandle) {
-    //     cancelAnimationFrame(renderHandle);
-    //     renderHandle = undefined;
-    //     button.textContent = 'Play';
-    //   } else {
-    //     renderHandle = requestAnimationFrame(renderLoop);
-    //     button.textContent = 'Pause';
-    //   }
-    // });
-    // button.textContent = 'Play';
-    // document.body.append(button);
+    const buttonContainer = document.createElement('div');
+    buttonContainer.classList.add('absolute', 'top-1', 'left-1', 'flex', 'gap-2');
+    document.body.append(buttonContainer);
+
+    const textarea = document.createElement('textarea');
+    textarea.cols = 60;
+    textarea.rows = 12;
+    textarea.readOnly = true;
+    textarea.classList.add('absolute');
+    document.body.append(textarea);
+
+    const playButton = document.createElement('button');
+    playButton.replaceChildren('Play');
+
+    playButton.addEventListener('click', () => {
+      let currMs = performance.now();
+      textToSpeakFeature.play('');
+
+      Msg.listen('viseme', (msg) => {
+        textarea.textContent += `${(performance.now() - currMs).toFixed(2)}: ${msg}\n`;
+        // console.log(`${(performance.now() - currMs).toFixed(2)}: ${msg}`);
+      });
+    });
+
+    const pauseButton = document.createElement('button');
+    pauseButton.replaceChildren('Pause');
+
+    pauseButton.addEventListener('click', () => {
+      textToSpeakFeature.pause();
+      console.log('paused');
+    });
+
+    const resumeButton = document.createElement('button');
+    resumeButton.replaceChildren('Resume');
+
+    resumeButton.addEventListener('click', () => {
+      textToSpeakFeature.resume('');
+      console.log('resumed');
+    });
+
+    buttonContainer.append(playButton, pauseButton, resumeButton);
   }
 
   // Animate the render loop only after everything is loaded.
@@ -119,6 +188,7 @@ function createScene(): {
   controls.screenSpacePanning = true;
   controls.update();
 
+  // TODO Use a resizeobserver instead
   window.addEventListener(
     'resize',
     () => {
@@ -241,7 +311,18 @@ function createHost(opts: {
   const host = new HostObject({ owner: opts.owner, clock: opts.clock });
   renderFn.push(() => host.update());
 
-  //#region Aniamtion Feature
+  //#region TextToSpeakFeature
+  const listener = new THREE.AudioListener();
+  opts.camera.add(listener);
+  const textToSpeakFeature = new TextToSpeakFeature(host, {
+    listener,
+    attachTo: opts.audioAttach,
+  });
+  host.addFeature(textToSpeakFeature);
+  //#endregion
+
+  /*
+  //#region Animation Feature
 
   const animFeature = new AnimationFeature(host);
   host.addFeature(animFeature);
@@ -277,34 +358,32 @@ function createHost(opts: {
   }
 
   // Blink Layer
-  /*
   {
-    const blinkLayer = animFeature.addLayer({
-      name: 'Blink',
-      blendMode: 'Additive',
-    });
+    // const blinkLayer = animFeature.addLayer({
+    //   name: 'Blink',
+    //   blendMode: 'Additive',
+    // });
 
-    const blinkClips = opts.clips.blink;
-    blinkClips.forEach((c) => THREE.AnimationUtils.makeClipAdditive(c));
+    // const blinkClips = opts.clips.blink;
+    // blinkClips.forEach((c) => THREE.AnimationUtils.makeClipAdditive(c));
 
-    const blinkHandle = blinkLayer.addRandomAnimation({
-      name: 'blink',
-      playIntervalS: 3,
-      subStateOpts: blinkClips.map((clip) => {
-        const clipChecked = blinkLayer.mixer.existingAction(clip) ? clip.clone() : clip;
-        const action = blinkLayer.mixer.clipAction(clipChecked);
+    // const blinkHandle = blinkLayer.addRandomAnimation({
+    //   name: 'blink',
+    //   playIntervalS: 3,
+    //   subStateOpts: blinkClips.map((clip) => {
+    //     const clipChecked = blinkLayer.mixer.existingAction(clip) ? clip.clone() : clip;
+    //     const action = blinkLayer.mixer.clipAction(clipChecked);
 
-        return {
-          name: clipChecked.name,
-          action,
-          loopCount: 1,
-        };
-      }),
-    });
+    //     return {
+    //       name: clipChecked.name,
+    //       action,
+    //       loopCount: 1,
+    //     };
+    //   }),
+    // });
 
-    blinkLayer.playAnimation(blinkHandle);
+    // blinkLayer.playAnimation(blinkHandle);
   }
-  */
 
   // Talking Idle Layer
   {
@@ -377,6 +456,7 @@ function createHost(opts: {
   }
 
   //#endregion
+  */
 
-  return host;
+  return { host, textToSpeakFeature };
 }
