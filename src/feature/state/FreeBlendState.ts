@@ -25,8 +25,8 @@ export default class FreeBlendState extends AbstractState {
     easingFn?: EasingFunction
   ): TWEEN.Tween<{}> {
     this.#states.forEach((s) => s.setWeightTween(toWeight, seconds, easingFn));
-    // TODO Fix this. Create a data structure like a TWEEN Group
-    // that can control all the free blend tweens
+    // TODO Fix this. The returned tween does not control the actual state tweens.
+    // Create a data structure like a TWEEN Group that can control all the free blend tweens
     return new TWEEN.Tween({}).duration(seconds);
   }
   //#endregion
