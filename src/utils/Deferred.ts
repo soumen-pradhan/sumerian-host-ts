@@ -1,16 +1,19 @@
-export default class Deferred<TResolve = any, TReject = never> extends Promise<TResolve> {
-  #status: 'resolved' | 'rejected' | 'canceled' | 'pending' = 'pending';
+type Status = 'resolved' | 'rejected' | 'canceled' | 'pending';
+
+export default class Deferred<TResolve = any, TReject = Error> extends Promise<TResolve> {
+  // Has to be wrapped in an object to obtain a reference
+  #status: { s: Status } = { s: 'pending' };
   get resolved() {
-    return this.#status === 'resolved';
+    return this.#status.s === 'resolved';
   }
   get rejected() {
-    return this.#status === 'rejected';
+    return this.#status.s === 'rejected';
   }
   get canceled() {
-    return this.#status === 'canceled';
+    return this.#status.s === 'canceled';
   }
   get pending() {
-    return this.#status === 'pending';
+    return this.#status.s === 'pending';
   }
 
   #resolve: (v: TResolve) => void;
@@ -54,27 +57,29 @@ export default class Deferred<TResolve = any, TReject = never> extends Promise<T
     let rej: (v: TReject) => void = (_v) => {};
     let cancel: (v: TResolve) => void = (_v) => {};
 
+    const status: { s: Status } = { s: 'pending' };
+
     super((resolve, reject) => {
       // Store the resolver
       res = (value) => {
-        if (this.pending) {
-          this.#status = 'resolved';
+        if (status.s === 'pending') {
+          status.s = 'resolved';
           resolve(onResolve(value));
         }
       };
 
       // Store the rejecter
       rej = (value) => {
-        if (this.pending) {
-          this.#status = 'rejected';
+        if (status.s === 'pending') {
+          status.s = 'rejected';
           reject(onReject(value));
         }
       };
 
       // Store the canceler
       cancel = (value) => {
-        if (this.pending) {
-          this.#status = 'canceled';
+        if (status.s === 'pending') {
+          status.s = 'canceled';
           resolve(onCancel(value));
         }
       };
@@ -83,13 +88,22 @@ export default class Deferred<TResolve = any, TReject = never> extends Promise<T
       exec(res, rej, cancel);
     });
 
+    this.#status = status;
     this.#resolve = res;
     this.#reject = rej;
     this.#cancel = cancel;
     this.#exec = exec;
   }
 
-  static canceled<TResolve = any>(v: TResolve): Deferred<TResolve, never> {
+  static canceled<TResolve = any>(v: TResolve): Deferred<TResolve, Error> {
     return new Deferred<TResolve>((_res, _rej, cancel) => cancel(v));
+  }
+
+  static from<TResolve = any, TReject = never>(
+    promise: Promise<TResolve>
+  ): Deferred<TResolve, TReject> {
+    return new Deferred((res, rej) => {
+      promise.then((v) => res(v)).catch((e) => rej(e));
+    });
   }
 }
