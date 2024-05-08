@@ -17,6 +17,7 @@ export default class Msg {
     );
   }
 
+  // TODO A way to stop listening. Save the listener somewhere.
   static listen<Tag extends keyof EventTagMap, TMsg extends EventTagMap[Tag]['detail']>(
     tag: Tag,
     listener: (msg: TMsg) => void

@@ -19,6 +19,7 @@ export default class Speech {
   #currMarkIndex = -1;
 
   #incrMark() {
+    // TODO This assumes that only type:viseme are in the speechmarks
     this.#currMarkIndex++;
     this.#currMark =
       this.#currMarkIndex >= this.#speechMarks.length
