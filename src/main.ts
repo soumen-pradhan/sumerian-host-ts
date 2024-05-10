@@ -2,13 +2,7 @@ import './style.css';
 import './utils/Errors';
 
 import * as THREE from 'three';
-import {
-  GLTF,
-  GLTFLoader,
-  OBJLoader,
-  OrbitControls,
-  EXRLoader,
-} from 'three/examples/jsm/Addons.js';
+import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
 import * as TWEEN from '@tweenjs/tween.js';
 
