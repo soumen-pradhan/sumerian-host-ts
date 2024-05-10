@@ -115,7 +115,6 @@ export default class RandomAnimationState extends AbstractState {
       opts.transitionTimeS ?? this.#transitionTimeS,
       opts.easingFn ?? TWEEN.Easing.Linear.None
     );
-    console.log(`[${this.name}:Layer] playAnimation() state prep`, this.#currentState);
     this.#currentState?.play();
   }
 
@@ -152,10 +151,6 @@ export default class RandomAnimationState extends AbstractState {
           .configure(currentStates, targetState, transitionTimeS, easingFn)
           .onComplete(() => {
             this.#currentState = targetState;
-            console.log(
-              `[${this.name}:Layer] #prepareCurrentState() transition-Ended`,
-              this.#currentState
-            );
             this.#currentState.play();
           });
 

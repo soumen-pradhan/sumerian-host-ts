@@ -141,7 +141,6 @@ export default class AnimationLayer {
       opts.transitionTimeS ?? this.#transitionTimeS,
       opts.easingFn ?? TWEEN.Easing.Linear.None
     );
-    console.trace(`[${this.name}:Layer] playAnimation()`, this.#currentState);
     this.#currentState?.play();
   }
 
@@ -178,10 +177,6 @@ export default class AnimationLayer {
           .configure(currentStates, targetState, transitionTimeS, easingFn)
           .onComplete(() => {
             this.#currentState = targetState;
-            console.log(
-              `[${this.name}:Layer] #prepareCurrentState() transition-Ended`,
-              this.#currentState
-            );
             this.#currentState.play();
           });
 
