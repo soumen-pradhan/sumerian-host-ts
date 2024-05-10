@@ -10,6 +10,7 @@ export const NEUTRAL_50 = new THREE.Color(0xfafafa);
 export const NEUTRAL_400 = new THREE.Color(0xa3a3a3);
 export const NEUTRAL_950 = new THREE.Color(0x0a0a0a);
 
+export const AMBER_100 = new THREE.Color(0xfef3c7);
 export const AMBER_400 = new THREE.Color(0xfbbf24);
 
 export const YELLOW_950 = new THREE.Color(0x422006);
