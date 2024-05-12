@@ -2,6 +2,7 @@ export {};
 
 declare global {
   type PropRequired<T, KReq extends keyof T> = Omit<T, KReq> & Required<Pick<T, KReq>>;
+  type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
 
   type BlendMode = 'Override' | 'Additive';
 

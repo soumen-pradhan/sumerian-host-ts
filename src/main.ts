@@ -203,29 +203,29 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
   //#region Load Luke - Adult Male
 
   const { luke, bindPoseOffset } = await gltfLoader.loadAsync(path.luke).then((luke) => {
-      scene.add(luke.scene);
+    scene.add(luke.scene);
 
-      // Make the offset pose additive
+    // Make the offset pose additive
     const [bindPoseOffset] = luke.animations as (THREE.AnimationClip | undefined)[];
     if (bindPoseOffset) {
       THREE.AnimationUtils.makeClipAdditive(bindPoseOffset);
+    }
+
+    const lukeAudioAttach =
+      luke.scene.getObjectByName(ModelConstants.audioAttachJoint1) ??
+      throwErr(`Model ${path.luke} lacks prop: ${ModelConstants.audioAttachJoint1}`);
+
+    // Cast Shadows
+    luke.scene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
       }
+    });
 
-      const lukeAudioAttach =
-        luke.scene.getObjectByName(ModelConstants.audioAttachJoint1) ??
-        throwErr(`Model ${path.luke} lacks prop: ${ModelConstants.audioAttachJoint1}`);
-
-      // Cast Shadows
-      luke.scene.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.castShadow = true;
-        }
-      });
-
-      gui('Luke', luke.scene).pos().rot().scale().visible();
+    gui('Luke', luke.scene).pos().rot().scale().visible();
 
     return { luke: luke.scene, bindPoseOffset };
-    });
+  });
 
   //#endregion
 
@@ -431,36 +431,7 @@ function createHost({
 }: {
   owner: GLTF['scene'];
   clock: THREE.Clock;
-  clip: {
-    blink: {
-      blink_fast: THREE.AnimationClip;
-      blink_med: THREE.AnimationClip;
-      blink_slow: THREE.AnimationClip;
-    };
-    face_idle: THREE.AnimationClip;
-    lipsync: {
-      '@': THREE.AnimationClip;
-      a: THREE.AnimationClip;
-      e: THREE.AnimationClip;
-      E: THREE.AnimationClip;
-      f: THREE.AnimationClip;
-      i: THREE.AnimationClip;
-      k: THREE.AnimationClip;
-      o: THREE.AnimationClip;
-      O: THREE.AnimationClip;
-      p: THREE.AnimationClip;
-      r: THREE.AnimationClip;
-      s: THREE.AnimationClip;
-      S: THREE.AnimationClip;
-      sil: THREE.AnimationClip;
-      stand_talk: THREE.AnimationClip;
-      T: THREE.AnimationClip;
-      t: THREE.AnimationClip;
-      u: THREE.AnimationClip;
-    };
-    stand_idle: THREE.AnimationClip;
-    bindPoseOffset?: THREE.AnimationClip;
-  };
+  clip: UnwrapPromise<ReturnType<typeof loadModels>>['clip'];
 }) {
   const host = new HostObject({ owner, clock });
   renderFn.push(() => host.update());
