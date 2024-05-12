@@ -202,15 +202,13 @@ async function createScene() {
 async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PATH }) {
   //#region Load Luke - Adult Male
 
-  const { luke, bindPoseOffsetClip } = await gltfLoader
-    .loadAsync(path.luke)
-    .then((luke) => {
+  const { luke, bindPoseOffset } = await gltfLoader.loadAsync(path.luke).then((luke) => {
       scene.add(luke.scene);
 
       // Make the offset pose additive
-      const [bindPoseOffsetClip] = luke.animations;
-      if (bindPoseOffsetClip) {
-        THREE.AnimationUtils.makeClipAdditive(bindPoseOffsetClip);
+    const [bindPoseOffset] = luke.animations as (THREE.AnimationClip | undefined)[];
+    if (bindPoseOffset) {
+      THREE.AnimationUtils.makeClipAdditive(bindPoseOffset);
       }
 
       const lukeAudioAttach =
@@ -226,7 +224,7 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
 
       gui('Luke', luke.scene).pos().rot().scale().visible();
 
-      return { luke: luke.scene, bindPoseOffsetClip };
+    return { luke: luke.scene, bindPoseOffset };
     });
 
   //#endregion
@@ -421,7 +419,7 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
       gesture: clips[3],
       lipsync: clips[4],
       stand_idle: clips[5],
-      bindPoseOffsetClip,
+      bindPoseOffset,
     },
   };
 }
