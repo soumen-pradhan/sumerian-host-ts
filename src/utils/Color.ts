@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 /** From @link https://tailwindcss.com/docs/customizing-colors */
 
-export const Color = {
+const Color = {
   SLATE_50: new THREE.Color(0xf8fafc),
   SLATE_700: new THREE.Color(0x334155),
   SLATE_950: new THREE.Color(0x020617),
@@ -26,3 +26,5 @@ export const Color = {
 
   ROSE_600: new THREE.Color(0xe11d48),
 };
+
+export default Color;
