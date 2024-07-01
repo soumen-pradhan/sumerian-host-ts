@@ -1,11 +1,13 @@
 import './style.css';
 
 import * as THREE from 'three';
-import Color from './utils/Color';
-import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
-import { ControlGui } from './utils/ControlGui';
+
+import { ControlGui, Color } from './utils';
+import { HostObject } from './three-host';
+import { PointOfInterestFeature } from './host';
 
 //#region Globals
 
@@ -22,7 +24,14 @@ const PATH = {
   },
 } as const;
 
-const renderFn: ((args: { deltaS?: number }) => any)[] = [];
+const ModelConstants = {
+  audioAttachJoint1: 'chardef_c_neckB',
+  audioAttachJoint2: 'charhead',
+  lookJoint1: 'charjx_c_look',
+  lookJoint2: 'chargaze',
+};
+
+const renderFn: ((args?: { deltaS?: number }) => any)[] = [];
 let renderHandle: number | undefined;
 
 let GLOBAL_GUI: GUI | undefined;
@@ -38,8 +47,23 @@ main();
 async function main() {
   GLOBAL_GUI = new GUI();
 
-  const { renderLoop, scene } = createScene();
-  await loadModels({ scene, path: PATH });
+  const { renderLoop, scene, camera, clock } = createScene();
+  const { luke, clip } = await loadModels({ scene, path: PATH });
+
+  createHost({
+    three: { camera, clock, scene },
+    owner: luke,
+    clip,
+  });
+
+  // createHost({
+  //   three: { camera, clock, scene },
+  //   owner: luke,
+  //   clip,
+  //   joint: { audioAttach: lukeAudioAttach, look: lukeLookJoint },
+  //   polly: { voice: 'Matthew', engine: 'neural' },
+  //   config: { gesture: gestureConfig, poi: poiConfig },
+  // });
 
   // Animate the render loop only after everything is loaded.
   renderHandle = requestAnimationFrame(renderLoop);
@@ -165,17 +189,12 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
 
   //#region Load Luke - Adult Male
 
-  const ModelConstants = {
-    audioAttachJoint1: 'chardef_c_neckB',
-    audioAttachJoint2: 'charhead',
-    lookJoint1: 'charjx_c_look',
-    lookJoint2: 'chargaze',
-  };
-
   const { luke, bindPoseOffset } = await gltfLoader
     .loadAsync(path.character)
     .then((luke) => {
-      scene.add(luke.scene);
+      // scene.add(luke.scene);
+      // gui(luke.scene);
+
       luke.scene.rotateY(0.3);
       luke.scene.name = 'luke';
 
@@ -185,20 +204,12 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
         THREE.AnimationUtils.makeClipAdditive(bindPoseOffset);
       }
 
-      const lukeAudioAttach =
-        luke.scene.getObjectByName(ModelConstants.audioAttachJoint1) ??
-        throwErr(
-          `Model ${path.character} lacks prop: ${ModelConstants.audioAttachJoint1}`
-        );
-
       // Cast Shadows
       luke.scene.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           child.castShadow = true;
         }
       });
-
-      gui(luke.scene);
 
       return { luke: luke.scene, bindPoseOffset };
     });
@@ -316,4 +327,25 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
       bindPoseOffset,
     },
   };
+}
+
+function createHost({
+  three,
+  owner,
+  clip,
+}: {
+  three: { camera: THREE.Camera; clock: THREE.Clock; scene: THREE.Scene };
+  owner: GLTF['scene'];
+  clip: Awaited<ReturnType<typeof loadModels>>['clip'];
+}) {
+  const host = new HostObject({ owner, clock: three.clock });
+  renderFn.push(() => host.update());
+
+  host.listenTo(HostObject.EVENTS.ADD_FEATURE, (name) => console.log('Added', name));
+
+  const poi = new PointOfInterestFeature(host);
+
+  host.addFeature(poi);
+
+  return { host };
 }
