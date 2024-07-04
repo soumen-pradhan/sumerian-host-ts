@@ -1,4 +1,5 @@
 import IAnimationFeatureDependent from './IAnimationFeatureDependent';
 import IManagedAnimationLayer from './IManagedAnimationLayer';
+import AnimationFeature from './AnimationFeature';
 
-export { IAnimationFeatureDependent, IManagedAnimationLayer };
+export { IAnimationFeatureDependent, IManagedAnimationLayer, AnimationFeature };
