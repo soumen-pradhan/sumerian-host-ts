@@ -18,4 +18,10 @@ export class ControlGui {
     this.#gui.add(this.#model.position, 'z');
     return this;
   }
+
+  visible(show = true) {
+    this.#model.visible = show;
+    this.#gui.add(this.#model, 'visible');
+    return this;
+  }
 }
