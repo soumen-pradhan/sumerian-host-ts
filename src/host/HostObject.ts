@@ -12,7 +12,7 @@ export default class HostObject<TOwner extends HostOwner> extends Messenger {
   #features: Map<string, AbstractHostFeature<TOwner>> = new Map();
 
   constructor({ owner }: { owner: TOwner }) {
-    super(owner.id);
+    super(owner.id.toString());
     this.#owner = owner;
     this.#lastUpdateMs = this.getNowMs();
   }
