@@ -6,7 +6,7 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { ControlGui, Color } from './utils';
-import { HostObject } from './three-host';
+import { AnimationFeature, HostObject } from './three-host';
 import { PointOfInterestFeature } from './host';
 
 //#region Globals
@@ -192,11 +192,11 @@ async function loadModels({ scene, path }: { scene: THREE.Scene; path: typeof PA
   const { luke, bindPoseOffset } = await gltfLoader
     .loadAsync(path.character)
     .then((luke) => {
-      // scene.add(luke.scene);
-      // gui(luke.scene);
-
       luke.scene.rotateY(0.3);
       luke.scene.name = 'luke';
+
+      scene.add(luke.scene);
+      gui(luke.scene).visible(false);
 
       // Make the offset pose additive
       const [bindPoseOffset] = luke.animations as (THREE.AnimationClip | undefined)[];
@@ -341,7 +341,16 @@ function createHost({
   const host = new HostObject({ owner, clock: three.clock });
   renderFn.push(() => host.update());
 
-  host.listenTo(HostObject.EVENTS.ADD_FEATURE, (name) => console.log('Added', name));
+  host.listenTo(HostObject.EVENTS.ADD_FEATURE, ({ detail: name }) =>
+    console.log('Added', name)
+  );
+
+  //#region Animation
+
+  const anim = new AnimationFeature(host);
+  host.addFeature(anim);
+
+  //#endregion
 
   const poi = new PointOfInterestFeature(host);
 
