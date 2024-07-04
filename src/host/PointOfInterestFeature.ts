@@ -13,4 +13,5 @@ export default class PointOfInterestFeature<TOwner extends HostOwner>
   }
 
   getName = () => PointOfInterestFeature.name;
+  setName = () => {};
 }
