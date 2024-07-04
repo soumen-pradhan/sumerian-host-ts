@@ -8,7 +8,7 @@ declare global {
   // default value of T should be {} not any
   type Constructor<T = {}> = new (...args: any[]) => T;
 
-  type HostOwner = { id: number };
+  type HostOwner = { id: any };
 
   /**
    * All events should confirm to this type, so that functions can
