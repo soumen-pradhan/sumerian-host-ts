@@ -12,12 +12,15 @@
     "url": "https://github.com/soumen-pradhan/sumerian-host-ts/issues"
   },
   "homepage": "https://github.com/soumen-pradhan/sumerian-host-ts#readme",
+  "type": "module",
   "workspaces": [
     "./packages/*",
     "./apps/*"
   ],
   "scripts": {
     "dev:three": "npm run dev --workspace=apps/demo-three",
+    "test": "vitest",
+    "test:run": "vitest run",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
     "lint": "eslint --fix .",
