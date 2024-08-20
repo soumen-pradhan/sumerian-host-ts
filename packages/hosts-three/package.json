@@ -1,0 +1,19 @@
+{
+  "name": "hosts-three",
+  "version": "0.0.1",
+  "main": "./src/index.ts",
+  "scripts": {},
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "hosts-core": "^0.0.1",
+    "three": "^0.164.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.164.0"
+  },
+  "peerDependencies": {
+    "three": "^0.164.1"
+  }
+}
