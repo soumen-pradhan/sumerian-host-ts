@@ -1,8 +1,3 @@
-import { greet as coreGreet } from 'hosts-core';
+import HostObject from './HostObject';
 
-export function greet(): string {
-  const core = coreGreet();
-  const greet = core + ' Roma Invicta from hosts-three';
-  console.log(greet);
-  return greet;
-}
+export { HostObject };

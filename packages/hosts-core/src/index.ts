@@ -1,5 +1,8 @@
-export function greet(): string {
-  const greet = 'Gloria Imperium from hosts-core';
-  console.log(greet);
-  return greet;
-}
+import Messenger from './Messenger';
+import HostObject from './HostObject';
+
+export { Messenger, HostObject };
+
+import type { IMessenger } from './Messenger';
+
+export type { IMessenger };

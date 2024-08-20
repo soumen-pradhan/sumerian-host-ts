@@ -1,9 +1,11 @@
 import './style.css';
 
 import * as THREE from 'three';
-import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
+
+import { HostObject } from 'hosts-three';
 
 import { ControlGui, Color } from './utils';
 
@@ -38,8 +40,14 @@ await main();
 async function main() {
   GLOBAL_GUI = new GUI();
 
-  const { renderLoop, scene } = createScene();
-  await loadModels({ scene, path: PATH });
+  const { renderLoop, scene, camera, clock } = createScene();
+  const { luke, clip } = await loadModels({ scene, path: PATH });
+
+  createHost({
+    three: { camera, clock, scene },
+    owner: luke,
+    clip,
+  });
 
   // Animate the render loop only after everything is loaded.
   _renderHandle = requestAnimationFrame(renderLoop);
@@ -333,4 +341,19 @@ async function loadModels({
       bindPoseOffset,
     },
   };
+}
+
+function createHost({
+  three,
+  owner,
+  clip,
+}: {
+  three: { camera: THREE.Camera; clock: THREE.Clock; scene: THREE.Scene };
+  owner: GLTF['scene'];
+  clip: Awaited<ReturnType<typeof loadModels>>['clip'];
+}) {
+  const host = new HostObject({ owner, clock: three.clock });
+  renderFn.push(() => host.update());
+
+  return { host };
 }
