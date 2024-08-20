@@ -28,6 +28,7 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      '@typescript-eslint/no-explicit-any': 'warn',
       ...vitest.configs.recommended.rules,
     },
   },
