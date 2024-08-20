@@ -2,9 +2,13 @@ import globals from 'globals';
 import pluginJs from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import eslintConfigPrettier from 'eslint-config-prettier';
+import vitest from '@vitest/eslint-plugin';
 
 export default [
-  { files: ['**/*.{js,mjs,cjs,ts}'] },
+  {
+    files: ['**/*.{js,mjs,cjs,ts}'],
+    plugins: { vitest },
+  },
   {
     languageOptions: {
       globals: globals.browser,
@@ -24,6 +28,7 @@ export default [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      ...vitest.configs.recommended.rules,
     },
   },
   eslintConfigPrettier,
