@@ -1,0 +1,14 @@
+{
+  "name": "demo-three",
+  "version": "0.0.1",
+  "main": "./src/main.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "hosts-three": "^0.0.1",
+    "three": "^0.164.1"
+  }
+}
