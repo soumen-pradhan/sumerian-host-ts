@@ -17,6 +17,7 @@
     "./apps/*"
   ],
   "scripts": {
+    "dev:three": "npm run dev --workspace=apps/demo-three",
     "fmt": "prettier --write .",
     "fmt:check": "prettier --check .",
     "lint": "eslint --fix .",
