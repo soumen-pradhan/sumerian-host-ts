@@ -13,6 +13,8 @@ const Color = {
   NEUTRAL_400: new THREE.Color(0xa3a3a3),
   NEUTRAL_950: new THREE.Color(0x0a0a0a),
 
+  STONE_500: new THREE.Color(0x78716c),
+
   AMBER_100: new THREE.Color(0xfef3c7),
   AMBER_400: new THREE.Color(0xfbbf24),
 
