@@ -1,3 +1,4 @@
+import AbstractHostFeature from './AbstractHostFeature';
 import Messenger from './Messenger';
 
 /**
@@ -7,6 +8,7 @@ import Messenger from './Messenger';
 export default class HostObject<TOwner extends HostOwner> extends Messenger {
   #owner: TOwner;
   #lastUpdateMs: number;
+  #features: Map<string, AbstractHostFeature<TOwner>> = new Map();
 
   constructor({ owner }: { owner: TOwner }) {
     super(owner.id.toString());
@@ -39,6 +41,52 @@ export default class HostObject<TOwner extends HostOwner> extends Messenger {
     this.emit(HostObject.EVENTS.UPDATE, deltaMs);
 
     this.#lastUpdateMs = currentMs;
+  }
+
+  /** Add a host feature. Adds dynamically as well. */
+  addFeature(feature: AbstractHostFeature<TOwner>, force = false): boolean {
+    if (this.#features.has(feature.name)) {
+      const warning = `Feature ${feature.name} exists on host ${this.id}.`;
+
+      if (force) {
+        console.warn(warning + ' Existing features will be overwritten.');
+      } else {
+        console.warn(
+          warning + 'Use "force" argument to overwrite this feature.'
+        );
+        return false;
+      }
+    }
+
+    feature.installApi();
+    this.#features.set(feature.name, feature);
+    this.emit(HostObject.EVENTS.ADD_FEATURE, feature.name);
+
+    return true;
+  }
+
+  /**
+   * Remove a feature from the host.
+   * @param featureName Name of the type of feature to remove.
+   * @returns Whether the feature was successfully removed.
+   */
+  removeFeature(featureName: string): boolean {
+    if (!this.#features.has(featureName)) {
+      console.warn(`Feature:${featureName} does not exist on ${this.id}.`);
+      return false;
+    }
+
+    this.emit(HostObject.EVENTS.REMOVE_FEATURE, featureName);
+    this.#features.get(featureName)!.discard();
+    return this.#features.delete(featureName);
+  }
+
+  hasFeature(featureName: string): boolean {
+    return this.#features.has(featureName);
+  }
+
+  listFeatures(): string[] {
+    return [...this.#features.keys()];
   }
 
   static override EVENTS: typeof Messenger.EVENTS & {
