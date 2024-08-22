@@ -1,3 +1,7 @@
+// default value of T should be {} not any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Constructor<T = object> = new (...args: any[]) => T;
+
 /**
  * All events should confirm to this type, so that functions can
  * infer the parameter value type.

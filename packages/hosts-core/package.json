@@ -4,6 +4,7 @@
   "main": "./src/index.ts",
   "scripts": {},
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./anim": "./src/anim/index.ts"
   }
 }
