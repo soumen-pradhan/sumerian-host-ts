@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 type State = 'pending' | 'resolved' | 'rejected' | 'cancelled';
 
 /**
