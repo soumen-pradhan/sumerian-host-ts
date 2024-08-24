@@ -26,6 +26,19 @@ describe('AbstractHostFeature', () => {
     });
   });
 
+  describe('installApi', () => {
+    it('should add a property with the name of the feature class to the host set to an object that contains an EVENT property object', () => {
+      hostFeature.installApi();
+
+      // @ts-expect-error Type shenanigans
+      expect(mockHost['MockFeature']).toBeDefined();
+      // @ts-expect-error Type shenanigans
+      expect(mockHost['MockFeature']['EVENTS']).toBeDefined();
+      // @ts-expect-error Type shenanigans
+      expect(mockHost['MockFeature']['EVENTS']).toBeTypeOf('object');
+    });
+  });
+
   describe('listenTo', () => {
     it("should execute the host's listenTo method", () => {
       const hostFn = vi.spyOn(mockHost, 'listenTo');

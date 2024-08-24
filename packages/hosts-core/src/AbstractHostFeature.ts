@@ -31,7 +31,21 @@ export default abstract class AbstractHostFeature<TOwner extends HostOwner>
    * and methods from the feature that users of the host need access to.
    */
   installApi() {
-    console.warn('AbstractHostFeature.installApi() not impl. Will be dynamic');
+    const events: Record<string, string> = {};
+
+    // Add the class name to event names
+    // @ts-expect-error Type shenanigans
+    Object.entries(this.constructor.EVENTS).forEach(([name, value]) => {
+      events[name] = `${this.constructor.name}.${value}`;
+    });
+
+    const api = { EVENTS: events };
+    Object.defineProperty(this.host, this.constructor.name, {
+      value: api,
+      writable: true,
+    });
+
+    return api;
   }
 
   emit<R>(msg: HostEvent<string, R>, value: R): void {

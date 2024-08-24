@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import Deferred from '../../src/Deferred';
+import { throwErr } from '../../src/utils';
+import { Deferred } from '../../src';
 
 /** Run the function consuming all exceptions thrown */
 async function tryConsumeError(fn: () => Promise<unknown>) {
@@ -339,10 +340,6 @@ describe('Deferred', () => {
   });
 
   describe('static all', () => {
-    function throwErr(e?: any): never {
-      throw new Error(e);
-    }
-
     it('should return a Deferred', () => {
       expect(Deferred.all([])).toBeInstanceOf(Deferred);
     });
