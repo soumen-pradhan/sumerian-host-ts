@@ -16,3 +16,14 @@ type Constructor<T = object> = new (...args: any[]) => T;
 type HostEvent<T, R> = { event: T; value?: R };
 
 type HostOwner = { id: number | string };
+
+/** From {@link @tween-js/tween/dist/tween.d.ts} */
+
+type EasingFn = (amount: number) => number;
+type EasingFunctionGroup = {
+  In: EasingFn;
+  Out: EasingFn;
+  InOut: EasingFn;
+};
+
+type InterpolationFn = (v: number[], k: number) => number;
