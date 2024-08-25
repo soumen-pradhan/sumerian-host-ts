@@ -6,6 +6,7 @@ import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
 import { HostObject } from 'hosts-three';
+import { AnimationFeature } from 'hosts-three/anim';
 
 import { ControlGui, Color } from './utils';
 
@@ -180,6 +181,7 @@ function createScene() {
     stats.begin();
 
     renderFn.forEach((fn) => fn({ deltaS: clock.getDelta() }));
+    orbitControls.update();
     renderer.render(scene, camera);
 
     stats.end();
@@ -354,6 +356,69 @@ function createHost({
 }) {
   const host = new HostObject({ owner, clock: three.clock });
   renderFn.push(() => host.update());
+
+  //#region Animation
+
+  const anim = new AnimationFeature(host);
+  host.addFeature(anim);
+
+  // Layers 'Base', 'Face', 'BindPoseOffset'
+  {
+    {
+      anim.addLayer('Base');
+
+      anim.addAnimation('Base', clip.stand_idle.name, 'SingleState', {
+        clip: clip.stand_idle,
+      });
+
+      anim.playAnimation('Base', clip.stand_idle.name);
+    }
+
+    {
+      anim.addLayer('Face', { blendMode: 'Additive' });
+
+      const faceSubClip = THREE.AnimationUtils.subclip(
+        clip.face_idle,
+        clip.face_idle.name,
+        1,
+        clip.face_idle.duration * 30,
+        30
+      );
+
+      anim.addAnimation('Face', clip.face_idle.name, 'SingleState', {
+        clip: THREE.AnimationUtils.makeClipAdditive(faceSubClip),
+      });
+
+      anim.playAnimation('Face', clip.face_idle.name);
+    }
+
+    if (clip.bindPoseOffset !== undefined) {
+      anim.addLayer('BindPoseOffset', {
+        blendMode: 'Additive',
+      });
+
+      const bindPoseSubClip = THREE.AnimationUtils.subclip(
+        clip.bindPoseOffset,
+        clip.bindPoseOffset.name,
+        1,
+        2,
+        30
+      );
+
+      anim.addAnimation(
+        'BindPoseOffset',
+        clip.bindPoseOffset.name,
+        'SingleState',
+        {
+          clip: bindPoseSubClip,
+        }
+      );
+
+      anim.playAnimation('BindPoseOffset', clip.bindPoseOffset.name);
+    }
+  }
+
+  //#endregion
 
   return { host };
 }

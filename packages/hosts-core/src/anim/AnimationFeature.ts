@@ -45,7 +45,6 @@ export default class AnimationFeature<
     opts: AnimationLayerOpts = {},
     index?: number
   ): { name: string; index: number } {
-    const numLayers = this.#layers.length;
     let layerIndex = index;
 
     // Make sure the given index is within the range of layers
@@ -254,8 +253,6 @@ export default class AnimationFeature<
       );
       return def;
     }
-
-    console.log({ layer });
 
     // Notify that a new animation has begun
     this.emit(AnimationFeature.EVENTS.playAnimation, { layerName, animName });
