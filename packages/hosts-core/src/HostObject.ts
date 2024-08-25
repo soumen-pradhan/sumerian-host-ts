@@ -1,5 +1,7 @@
 import AbstractHostFeature from './AbstractHostFeature';
+import Deferred from './Deferred';
 import Messenger from './Messenger';
+import { wait } from './utils';
 
 /**
  * Object that manages access to all Host features. Contains a reference to
@@ -8,6 +10,7 @@ import Messenger from './Messenger';
 export default class HostObject<TOwner extends HostOwner> extends Messenger {
   #owner: TOwner;
   #lastUpdateMs: number;
+  #waits: Deferred<void>[] = [];
   #features: Map<string, AbstractHostFeature<TOwner>> = new Map();
 
   constructor({ owner }: { owner: TOwner }) {
@@ -28,6 +31,9 @@ export default class HostObject<TOwner extends HostOwner> extends Messenger {
   get deltaMs() {
     return this.nowMs - this.#lastUpdateMs;
   }
+  get currWaits() {
+    return this.#waits.length;
+  }
 
   /**
    * This function should be called in the engine's render loop. Executes update
@@ -37,10 +43,47 @@ export default class HostObject<TOwner extends HostOwner> extends Messenger {
     const currentMs = this.nowMs;
     const deltaMs = this.deltaMs;
 
+    // Progress stored waits
+    this.#waits.forEach((wait) => {
+      wait.execute(deltaMs);
+    });
+
+    for (const feature of this.#features.values()) {
+      feature.update(deltaMs);
+    }
+
     // Notify listeners an update occured
     this.emit(HostObject.EVENTS.UPDATE, deltaMs);
 
     this.#lastUpdateMs = currentMs;
+  }
+
+  /**
+   * Return a deferred promise that will wait a given number of seconds before
+   * resolving. The host will continuously update the wait promise during the
+   * update loop until it resolves.
+   */
+  wait(
+    ms: number,
+    on: {
+      onFinish?: () => void;
+      onProgress?: () => void;
+      onCancel?: () => void;
+      onError?: () => void;
+    } = {}
+  ): Deferred<void> {
+    const newLen = this.#waits.length + 1;
+
+    const waitDef = wait<void>(ms, {
+      ...on,
+      onFinish: () => {
+        on.onFinish?.();
+        this.#waits.splice(newLen - 1, 1);
+      },
+    });
+
+    this.#waits.push(waitDef);
+    return waitDef;
   }
 
   /** Add a host feature. Adds dynamically as well. */

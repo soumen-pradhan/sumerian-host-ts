@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { HostObject } from '../../src';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Deferred, HostObject } from '../../src';
 import { MockFeature } from './mocks';
 
 describe('HostObject', () => {
@@ -29,6 +29,42 @@ describe('HostObject', () => {
 
       await new Promise((res) => setTimeout(res, 100));
       expect(host.deltaMs / 1000).toBeCloseTo(0.1, 0);
+    });
+  });
+
+  describe('wait', () => {
+    it('should return a Deferred promise', () => {
+      expect(host.wait(3000)).toBeInstanceOf(Deferred);
+    });
+
+    it('should add a new deferred to the _waits array', () => {
+      const currWaits = host.currWaits;
+      host.wait(3000);
+
+      expect(host.currWaits).toBeGreaterThan(currWaits);
+    });
+
+    it('should resolve immediately if the seconds argument is less than or equal to zero', async () => {
+      await expect(host.wait(0)).resolves.toBeUndefined();
+      await expect(host.wait(-1)).resolves.toBeUndefined();
+    });
+
+    it("should execute the deferred's execute method with delta time when update is executed", () => {
+      const wait = host.wait(3);
+      const onExecute = vi.spyOn(wait, 'execute');
+      const deltaMs = host.deltaMs;
+
+      host.update();
+
+      expect(onExecute).toHaveBeenCalledWith(deltaMs);
+    });
+
+    it('should remove the deferred from the _waits array once the deferred is no longer pending', () => {
+      const wait = host.wait(1);
+      const currWaits = host.currWaits;
+
+      wait.resolve();
+      expect(host.currWaits).toBeLessThan(currWaits);
     });
   });
 
