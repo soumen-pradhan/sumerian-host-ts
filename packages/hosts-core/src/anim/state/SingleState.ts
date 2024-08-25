@@ -13,7 +13,7 @@ export type SingleStateOpts = AbstractStateOpts & {
 /** Class for playing a single animation clip. */
 export default class SingleState extends AbstractState {
   #timeScale: number;
-  loopCount: number;
+  #loopCount: number;
   #blendMode: BlendMode;
 
   declare _promises: (typeof AbstractState)['prototype']['_promises'] & {
@@ -24,7 +24,7 @@ export default class SingleState extends AbstractState {
     super({ ...opts, name: opts.name ?? SingleState.name });
 
     this.#timeScale = opts.timeScale ?? 1;
-    this.loopCount = opts.loopCount ?? Infinity;
+    this.#loopCount = opts.loopCount ?? Infinity;
     this.#blendMode = opts.blendMode ?? 'Override';
     this._promises.timeScale = Deferred.resolved();
 
@@ -38,10 +38,6 @@ export default class SingleState extends AbstractState {
 
   get timeScale() {
     return this.#timeScale;
-  }
-
-  private set timeScale(time: number) {
-    this.#timeScale = time;
   }
 
   /** Gets whether or not the timeScale is currently being animated. */
@@ -68,6 +64,14 @@ export default class SingleState extends AbstractState {
     }
 
     return this._promises.timeScale;
+  }
+
+  /** Sets the number of times the animation will repeat before finishing. */
+  get loopCount() {
+    return this.#loopCount;
+  }
+  set loopCount(loop) {
+    this.#loopCount = loop;
   }
 
   /** Gets the type of blending used for the animation. */

@@ -50,9 +50,6 @@ export default class AbstractState {
   get weight() {
     return this.#weight;
   }
-  private set weight(weight: number) {
-    this.#weight = weight;
-  }
 
   /** Updates the user defined weight over time. */
   setWeight(weight: number, ms = 0, easingFn?: EasingFn) {
