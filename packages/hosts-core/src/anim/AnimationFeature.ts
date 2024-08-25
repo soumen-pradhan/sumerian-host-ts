@@ -6,7 +6,7 @@ import type { AnimationLayerOpts } from './AnimationLayer';
 import SingleState, { SingleStateOpts } from './state/SingleState';
 
 export type AnimationTypes = {
-  SingleState: SingleStateOpts;
+  Single: SingleStateOpts;
 };
 
 /**

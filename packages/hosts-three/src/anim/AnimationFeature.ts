@@ -7,10 +7,7 @@ import {
 import SingleState, { SingleStateOpts } from './state/SingleState';
 
 export type AnimationTypes = CoreAnimationTypes & {
-  SingleState: Omit<
-    SingleStateOpts & { clip: THREE.AnimationClip },
-    'threeAction'
-  >;
+  Single: Omit<SingleStateOpts & { clip: THREE.AnimationClip }, 'threeAction'>;
 };
 
 export default class AnimationFeature extends CoreAnimationFeature<THREE.Object3D> {
