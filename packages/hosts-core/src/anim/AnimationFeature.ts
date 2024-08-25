@@ -210,7 +210,7 @@ export default class AnimationFeature<
 
     const state = (() => {
       switch (animType) {
-        case 'SingleState':
+        case 'Single':
           return this._createSingleState({
             ...opts,
             name: animName,
