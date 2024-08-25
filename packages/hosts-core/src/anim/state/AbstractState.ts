@@ -1,5 +1,5 @@
 import Deferred from '../../Deferred';
-import { AnimUtils, MathUtils } from '../../utils';
+import Utils from '../../utils';
 
 export type AbstractStateOpts = {
   name?: string;
@@ -32,7 +32,7 @@ export default class AbstractState {
     weight = 0,
   }: AbstractStateOpts = {}) {
     this.name = name;
-    this.#weight = MathUtils.clamp(weight);
+    this.#weight = Utils.Math.clamp(weight);
     this.#internalWeight = this.#weight;
 
     this._promises = {
@@ -53,13 +53,13 @@ export default class AbstractState {
 
   /** Updates the user defined weight over time. */
   setWeight(weight: number, ms = 0, easingFn?: EasingFn) {
-    weight = MathUtils.clamp(weight);
+    weight = Utils.Math.clamp(weight);
     this._promises.weight.cancel();
 
     if (ms <= 0) {
       this.#weight = weight;
     } else {
-      this._promises.weight = AnimUtils.interpolate(this, 'weight', weight, {
+      this._promises.weight = Utils.Anim.interpolate(this, 'weight', weight, {
         ms,
         easingFn,
         onProgress(progress) {
@@ -82,7 +82,7 @@ export default class AbstractState {
 
   /** Multiplies the user weight by a factor to determine the internal weight. */
   updateInternalWeight(factor: number) {
-    this.#internalWeight = this.#weight * MathUtils.clamp(factor);
+    this.#internalWeight = this.#weight * Utils.Math.clamp(factor);
   }
 
   /** Update any values that need to be evaluated every frame. */

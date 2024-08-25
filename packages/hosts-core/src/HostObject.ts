@@ -1,7 +1,7 @@
 import AbstractHostFeature from './AbstractHostFeature';
 import Deferred from './Deferred';
 import Messenger from './Messenger';
-import { wait } from './utils';
+import Utils from './utils';
 
 /**
  * Object that manages access to all Host features. Contains a reference to
@@ -74,7 +74,7 @@ export default class HostObject<TOwner extends HostOwner> extends Messenger {
   ): Deferred<void> {
     const newLen = this.#waits.length + 1;
 
-    const waitDef = wait<void>(ms, {
+    const waitDef = Utils.wait<void>(ms, {
       ...on,
       onFinish: () => {
         on.onFinish?.();

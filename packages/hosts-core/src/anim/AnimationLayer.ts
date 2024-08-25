@@ -1,5 +1,5 @@
 import Deferred from '../Deferred';
-import { AnimUtils, MathUtils } from '../utils';
+import Utils from '../utils';
 import IAnimationPlayer from './state/IAnimationPlayer';
 import IStateContainer from './state/IStateContainer';
 
@@ -89,9 +89,9 @@ export default class AnimationLayer extends IAnimationPlayer.Mixin(
       this.#promises.weight.cancel();
     }
 
-    weight = MathUtils.clamp(weight);
+    weight = Utils.Math.clamp(weight);
 
-    this.#promises.weight = AnimUtils.interpolate(this, 'weight', weight, {
+    this.#promises.weight = Utils.Anim.interpolate(this, 'weight', weight, {
       ms,
       easingFn: easingFn ?? this.easingFn,
     }) as unknown as Deferred<void>;

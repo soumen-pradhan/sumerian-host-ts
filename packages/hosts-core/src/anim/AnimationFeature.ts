@@ -1,6 +1,6 @@
 import AbstractHostFeature from '../AbstractHostFeature';
 import Deferred from '../Deferred';
-import { getUniqueName, throwErr } from '../utils';
+import Utils, { throwErr } from '../utils';
 import AnimationLayer from './AnimationLayer';
 import type { AnimationLayerOpts } from './AnimationLayer';
 import SingleState, { SingleStateOpts } from './state/SingleState';
@@ -65,7 +65,7 @@ export default class AnimationFeature<
     }
 
     // Make sure the layer name is unique
-    const layerName = getUniqueName(name, [...this.#layerMap.keys()]);
+    const layerName = Utils.getUniqueName(name, [...this.#layerMap.keys()]);
     if (layerName !== name) {
       console.warn(
         `Layer name:${name} is not unique. Saving with name:${layerName}`
@@ -163,7 +163,7 @@ export default class AnimationFeature<
     }
 
     // Make sure the layer name is unique
-    const name = getUniqueName(newName, [...this.#layerMap.keys()]);
+    const name = Utils.getUniqueName(newName, [...this.#layerMap.keys()]);
 
     if (name !== newName) {
       console.warn(
@@ -345,7 +345,7 @@ export default class AnimationFeature<
     }
 
     // Make sure the animationName is unique
-    const name = getUniqueName(animName, layer.getStateNames());
+    const name = Utils.getUniqueName(animName, layer.getStateNames());
 
     if (name !== animName) {
       console.warn(

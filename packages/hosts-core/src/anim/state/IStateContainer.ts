@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { EmptyBase, getUniqueName, impl, throwErr } from '../../utils';
+import Utils, { EmptyBase, impl, throwErr } from '../../utils';
 import AbstractState from './AbstractState';
 
 /**
@@ -73,7 +73,10 @@ export default class IStateContainer {
         }
 
         // Make sure the state name is unique
-        const uniqueName = getUniqueName(state.name, this.getStateNames());
+        const uniqueName = Utils.getUniqueName(
+          state.name,
+          this.getStateNames()
+        );
         if (state.name !== uniqueName) {
           console.warn(`Animation name ${state.name} not uniqur for state.`);
           state.name = uniqueName;
@@ -109,7 +112,7 @@ export default class IStateContainer {
         const state = this.#states.get(currName)!;
 
         // Make sure the name is unique
-        const uniqueName = getUniqueName(
+        const uniqueName = Utils.getUniqueName(
           newName,
           this.getStateNames().filter((n) => n !== currName)
         );

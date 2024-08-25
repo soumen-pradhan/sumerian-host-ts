@@ -1,5 +1,5 @@
 import Deferred from '../../Deferred';
-import { AnimUtils } from '../../utils';
+import Utils from '../../utils';
 import type { BlendMode } from '../AnimationLayer';
 import type { AbstractStateOpts } from './AbstractState';
 import AbstractState from './AbstractState';
@@ -52,7 +52,7 @@ export default class SingleState extends AbstractState {
     if (ms <= 0) {
       this.#timeScale = timeScale;
     } else {
-      this._promises.timeScale = AnimUtils.interpolate(
+      this._promises.timeScale = Utils.Anim.interpolate(
         this,
         'timeScale',
         timeScale,
