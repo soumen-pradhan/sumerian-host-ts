@@ -5,6 +5,7 @@ import Deferred from '../../Deferred';
 import AbstractState from './AbstractState';
 import IStateContainer from './IStateContainer';
 import TransitionState from './TransitionState';
+import { impl } from '../../utils';
 
 /**
  * Class factory interface for controlling playback of a collection of animations.
@@ -91,7 +92,6 @@ export default abstract class IAnimationPlayer {
   static Mixin<TBase extends Constructor<IStateContainer>>(Base: TBase) {
     return class IAnimationPlayerImpl extends Base implements IAnimationPlayer {
       #transitionState = new TransitionState();
-      // #states = new Map<string, AbstractState>();
       #currentState?: AbstractState;
       #paused = false;
       #transitionMs = 0;
@@ -136,6 +136,11 @@ export default abstract class IAnimationPlayer {
 
       get isTransitioning() {
         return this.#currentState === this.#transitionState;
+      }
+
+      // @ts-expect-error Mimicing an abstract method
+      protected get internalWeight(): number {
+        impl();
       }
 
       _prepareCurrentState(
@@ -203,7 +208,7 @@ export default abstract class IAnimationPlayer {
 
         // Update weight for the new current state so it has full influence for the player
         this.#currentState?.setWeight(1);
-        // this.#currentState?.updateInternalWeight(this._internalWeight) // TODO comes from its subclasses ??
+        this.#currentState?.updateInternalWeight(this.internalWeight);
       }
 
       playAnimation(

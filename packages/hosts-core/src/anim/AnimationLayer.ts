@@ -127,6 +127,10 @@ export default class AnimationLayer extends IAnimationPlayer.Mixin(
     this.currentState?.updateInternalWeight(this.#internalWeight);
   }
 
+  protected override get internalWeight(): number {
+    return this.#internalWeight;
+  }
+
   override update(deltaMs: number): void {
     super.update(deltaMs);
 
