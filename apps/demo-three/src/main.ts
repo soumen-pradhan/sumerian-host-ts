@@ -363,11 +363,12 @@ function createHost({
   host.addFeature(anim);
 
   // Layers 'Base', 'Face', 'BindPoseOffset'
+  // Required for the model to look not deformed
   {
     {
       anim.addLayer('Base');
 
-      anim.addAnimation('Base', clip.stand_idle.name, 'SingleState', {
+      anim.addAnimation('Base', clip.stand_idle.name, 'Single', {
         clip: clip.stand_idle,
       });
 
@@ -385,7 +386,7 @@ function createHost({
         30
       );
 
-      anim.addAnimation('Face', clip.face_idle.name, 'SingleState', {
+      anim.addAnimation('Face', clip.face_idle.name, 'Single', {
         clip: THREE.AnimationUtils.makeClipAdditive(faceSubClip),
       });
 
@@ -405,18 +406,15 @@ function createHost({
         30
       );
 
-      anim.addAnimation(
-        'BindPoseOffset',
-        clip.bindPoseOffset.name,
-        'SingleState',
-        {
-          clip: bindPoseSubClip,
-        }
-      );
+      anim.addAnimation('BindPoseOffset', clip.bindPoseOffset.name, 'Single', {
+        clip: bindPoseSubClip,
+      });
 
       anim.playAnimation('BindPoseOffset', clip.bindPoseOffset.name);
     }
   }
+
+  // Layer 'Blink'
 
   //#endregion
 
