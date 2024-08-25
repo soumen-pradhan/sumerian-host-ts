@@ -5,6 +5,7 @@
   "scripts": {},
   "exports": {
     ".": "./src/index.ts",
+    "./utils": "./src/utils.ts",
     "./anim": "./src/anim/index.ts"
   },
   "dependencies": {
