@@ -9,6 +9,7 @@ export type AnimationLayerOpts = {
   name?: string;
   blendMode?: BlendMode;
   weight?: number;
+  transitionMs?: number;
 };
 
 /**
@@ -29,7 +30,7 @@ export default class AnimationLayer extends IAnimationPlayer.Mixin(
 
   constructor(opts: AnimationLayerOpts = {}) {
     super();
-    this.IAnimationPlayerInit();
+    this.IAnimationPlayerInit({ transitionMs: opts.transitionMs });
 
     this.name = opts.name ?? AnimationLayer.name;
     this.#blendMode = opts.blendMode ?? 'Override';

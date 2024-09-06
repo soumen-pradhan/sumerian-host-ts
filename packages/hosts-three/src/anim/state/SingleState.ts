@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import { SingleState as CoreSingleState } from 'hosts-core/anim';
 import type { SingleStateOpts as CoreSingleStateOpts } from 'hosts-core/anim';
-import { MathUtils } from 'hosts-core/utils';
+import Utils from 'hosts-core/utils';
 import { Deferred } from 'hosts-core';
 
 export type SingleStateOpts = CoreSingleStateOpts & {
@@ -69,7 +69,7 @@ export default class SingleState extends CoreSingleState {
   }
 
   override set normalizedTime(time) {
-    time = MathUtils.clamp(time);
+    time = Utils.Math.clamp(time);
     this.#threeAction.time = this.#threeAction.getClip().duration * time;
   }
 

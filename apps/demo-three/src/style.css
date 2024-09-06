@@ -104,3 +104,7 @@ button:focus-visible {
   left: 1rem;
   top: 1rem;
 }
+
+.absolute {
+  position: absolute;
+}

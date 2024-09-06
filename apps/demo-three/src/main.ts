@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import './style.css';
 
 import * as THREE from 'three';
@@ -31,8 +33,20 @@ function gui(m: ConstructorParameters<typeof ControlGui>[1], g = GLOBAL_GUI) {
   return new ControlGui(m.name, m, g!);
 }
 
-const renderFn: ((args?: { deltaS?: number }) => unknown)[] = [];
+type ThreeState = {
+  gl: THREE.WebGLRenderer;
+  scene: THREE.Scene;
+  camera: THREE.Camera;
+  clock: THREE.Clock;
+  size: { width: number; height: number; top: number; left: number };
+};
+
+type RenderState = ThreeState & { deltaS: number };
+const renderFn: ((args: RenderState) => unknown)[] = [];
 let _renderHandle: number | undefined;
+
+type ResizeState = ThreeState;
+const resizeFn: ((args: ResizeState) => unknown)[] = [];
 
 //#endregion
 
@@ -51,6 +65,22 @@ async function main() {
   });
 
   // Animate the render loop only after everything is loaded.
+
+  const pauseBtn = document.createElement('button');
+  pauseBtn.classList.toggle('absolute');
+  pauseBtn.textContent = 'start';
+
+  pauseBtn.addEventListener('click', () => {
+    if (pauseBtn.textContent === 'pause') {
+      cancelAnimationFrame(_renderHandle!);
+      pauseBtn.textContent = 'start';
+    } else {
+      _renderHandle = requestAnimationFrame(renderLoop);
+      pauseBtn.textContent = 'pause';
+    }
+  });
+
+  // document.body.append(pauseBtn);
   _renderHandle = requestAnimationFrame(renderLoop);
 }
 
@@ -108,6 +138,7 @@ function createScene() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      resizeFn.forEach((fn) => fn({ renderDOM: renderer.domElement, scene }));
     },
     false
   );
@@ -170,6 +201,7 @@ function createScene() {
   ground.name = 'ground0';
 
   scene.add(ground);
+  gui(ground).visible(false);
 
   //#endregion
 
@@ -190,6 +222,85 @@ function createScene() {
   //#endregion
 
   return { renderLoop, scene, camera, clock };
+}
+
+function addVideoBg(scene: THREE.Scene) {
+  const video = document.createElement('video');
+  video.autoplay = true;
+  video.muted = true; // Mute to avoid feedback noise
+
+  navigator.mediaDevices.getUserMedia({ video: true }).then((stream) => {
+    video.srcObject = stream;
+    video.play();
+  });
+
+  // video.src = PATH.vid.mp4;
+  // video.play();
+
+  // document.body.append(video);
+
+  const videoTexture = new THREE.VideoTexture(video);
+  videoTexture.minFilter = THREE.LinearFilter; // Optionally set the filtering
+  videoTexture.wrapS = THREE.RepeatWrapping;
+  videoTexture.wrapT = THREE.RepeatWrapping;
+
+  // Wait for the video to be ready before using the texture
+  video.addEventListener('canplay', () => {
+    scene.background = videoTexture;
+
+    function fixBgAspect({ renderDOM, scene }: ResizeState) {
+      if (scene.background instanceof THREE.VideoTexture) {
+        const canvasAspect = renderDOM.clientWidth / renderDOM.clientHeight;
+        const imageAspect = video.videoWidth / video.videoHeight;
+        const factor = imageAspect / canvasAspect;
+
+        // When factor larger than 1, that means texture 'wilder' than target。
+        // we should scale texture height to target height and then 'map' the center  of texture to target， and vice versa.
+        scene.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+        scene.background.repeat.x = factor > 1 ? 1 / factor : 1;
+        scene.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+        scene.background.repeat.y = factor > 1 ? 1 : factor;
+      }
+    }
+
+    const renderDOM = document.getElementById('renderCanvas');
+    if (renderDOM instanceof HTMLCanvasElement) {
+      fixBgAspect({ renderDOM, scene });
+    }
+
+    resizeFn.push(fixBgAspect);
+  });
+}
+
+function addBg(scene: THREE.Scene) {
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.loadAsync('PATH.texture.cafeInterior').then((tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    scene.background = tex;
+
+    function fixBgAspect({ renderDOM, scene }: ResizeState) {
+      if (scene.background instanceof THREE.Texture) {
+        const canvasAspect = renderDOM.clientWidth / renderDOM.clientHeight;
+        const image = tex.image as HTMLImageElement;
+        const imageAspect = image.width / image.height;
+        const factor = imageAspect / canvasAspect;
+
+        // When factor larger than 1, that means texture 'wilder' than target。
+        // we should scale texture height to target height and then 'map' the center  of texture to target， and vice versa.
+        scene.background.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
+        scene.background.repeat.x = factor > 1 ? 1 / factor : 1;
+        scene.background.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
+        scene.background.repeat.y = factor > 1 ? 1 : factor;
+      }
+    }
+
+    const renderDOM = document.getElementById('renderCanvas');
+    if (renderDOM instanceof HTMLCanvasElement) {
+      fixBgAspect({ renderDOM, scene });
+    }
+
+    resizeFn.push(fixBgAspect);
+  });
 }
 
 async function loadModels({
@@ -415,6 +526,31 @@ function createHost({
   }
 
   // Layer 'Blink'
+  {
+    anim.addLayer('Blink', { blendMode: 'Additive' });
+
+    anim.addAnimation('Blink', 'blink', 'Single', {
+      clip: THREE.AnimationUtils.makeClipAdditive(clip.blink.blink_med),
+    });
+
+    // anim.addAnimation('Blink', 'blink', 'Random', {
+    //   playIntervalMs: 1000,
+    //   subStatesOpts: [
+    //     clip.blink.blink_fast,
+    //     clip.blink.blink_med,
+    //     clip.blink.blink_slow,
+    //   ].map((clip) => {
+    //     THREE.AnimationUtils.makeClipAdditive(clip);
+    //     return {
+    //       name: clip.name,
+    //       loopCount: Infinity,
+    //       clip,
+    //     };
+    //   }),
+    // });
+
+    anim.playAnimation('Blink', 'blink');
+  }
 
   //#endregion
 

@@ -12,12 +12,12 @@ export type TransitionStateOpts = AbstractStateOpts & {};
 export default class TransitionState extends AbstractState {
   #to?: AbstractState;
   #from: AbstractState[] = [];
-  #weightPromise: Deferred<void>;
+  _weightPromise: Deferred<void>;
 
   constructor(opts: TransitionStateOpts = {}) {
-    super(opts);
+    super({ ...opts, name: opts.name ?? TransitionState.name });
 
-    this.#weightPromise = Deferred.resolved();
+    this._weightPromise = Deferred.resolved();
   }
 
   override get internalWeight(): number {
@@ -49,8 +49,8 @@ export default class TransitionState extends AbstractState {
    */
   configure(
     currentStates: AbstractState[],
-    targetState: AbstractState,
-    transitionMs: number,
+    targetState?: AbstractState,
+    transitionMs: number = 0,
     easingFn: EasingFn = TWEEN.Easing.Linear.None,
     onComplete?: () => void
   ): void {
@@ -84,7 +84,7 @@ export default class TransitionState extends AbstractState {
     onComplete?: () => void
   ): void {
     // Stop any pending promises
-    this.#weightPromise.cancel();
+    this._weightPromise.cancel();
 
     // Start tweening weight to 0 for the current states
     const weightPromises = this.#from.map((state) =>
@@ -96,7 +96,7 @@ export default class TransitionState extends AbstractState {
       weightPromises.push(this.#to.setWeight(1, transitionMs, easingFn));
     }
 
-    this.#weightPromise = Deferred.all(weightPromises, {
+    this._weightPromise = Deferred.all(weightPromises, {
       onResolve: () => {
         this.#from.forEach((s) => {
           s.cancel();
@@ -121,7 +121,7 @@ export default class TransitionState extends AbstractState {
     this._playCallbacks.onError = on.onError;
     this._playCallbacks.onCancel = on.onCancel;
 
-    const promises = [this.#weightPromise];
+    const promises = [this._weightPromise];
     this.#from.forEach((s) => s.resume());
 
     if (this.#to) {
@@ -163,7 +163,7 @@ export default class TransitionState extends AbstractState {
         on.onCancel ?? this._playCallbacks.onCancel;
     }
 
-    const promises = [this.#weightPromise];
+    const promises = [this._weightPromise];
 
     this.#from.forEach((state) => {
       state.resume();
@@ -186,7 +186,7 @@ export default class TransitionState extends AbstractState {
   override cancel(): boolean {
     this.#from.forEach((s) => s.pause());
     this.#to?.pause();
-    this.#weightPromise.cancel();
+    this._weightPromise.cancel();
 
     return super.cancel();
   }
@@ -208,7 +208,7 @@ export default class TransitionState extends AbstractState {
   override discard(): void {
     super.discard();
 
-    this.#weightPromise.cancel();
+    this._weightPromise.cancel();
     // delete this.#weightPromise
 
     this.#to = undefined;

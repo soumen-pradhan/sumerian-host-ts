@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AnimUtils, getUniqueName, uuid, wait } from '../../src/utils';
+import Utils from '../../src/utils';
 import { Deferred } from '../../src';
 
 describe('Utils', () => {
   describe('createId', () => {
     it('should generate a string', () => {
-      expect(uuid()).toBeTypeOf('string');
+      expect(Utils.uuid()).toBeTypeOf('string');
     });
   });
 
@@ -20,33 +20,35 @@ describe('Utils', () => {
     ];
 
     it('should return the original name if it is not included in the provided array of names', () => {
-      expect(getUniqueName('uniqueName', nameArray)).toEqual('uniqueName');
+      expect(Utils.getUniqueName('uniqueName', nameArray)).toEqual(
+        'uniqueName'
+      );
 
-      expect(getUniqueName('name', nameArray)).not.toEqual('name');
+      expect(Utils.getUniqueName('name', nameArray)).not.toEqual('name');
     });
 
     it('should return a string that matches the original name with the highest trailing number appended if it is included in the provided array of names', () => {
-      expect(getUniqueName('name', nameArray)).toEqual('name15');
+      expect(Utils.getUniqueName('name', nameArray)).toEqual('name15');
 
-      expect(getUniqueName('name-5', nameArray)).toEqual('name-6');
+      expect(Utils.getUniqueName('name-5', nameArray)).toEqual('name-6');
 
-      expect(getUniqueName('nameOther', nameArray)).toEqual('nameOther1');
+      expect(Utils.getUniqueName('nameOther', nameArray)).toEqual('nameOther1');
     });
   });
 
   describe('wait', () => {
     it('should return a Deferred promise', () => {
-      expect(wait(3)).toBeInstanceOf(Deferred);
+      expect(Utils.wait(3)).toBeInstanceOf(Deferred);
     });
 
     it('should resolve immediately if the seconds argument is less than or equal to zero', async () => {
-      await expect(wait(0)).resolves.toBeUndefined();
-      await expect(wait(-1)).resolves.toBeUndefined();
+      await expect(Utils.wait(0)).resolves.toBeUndefined();
+      await expect(Utils.wait(-1)).resolves.toBeUndefined();
     });
 
     describe('execute', () => {
       it('should reject the promise if a non-numeric deltaTime argument is passed', () => {
-        const waitDeferred = wait(1);
+        const waitDeferred = Utils.wait(1);
         waitDeferred.execute('notANumber');
 
         return expect(waitDeferred).rejects.toThrowError();
@@ -54,7 +56,7 @@ describe('Utils', () => {
 
       it('should execute the onProgress function argument each time the deferred is executed with a non-zero delta time', () => {
         const onProgress = vi.fn();
-        const waitDeferred = wait(1, { onProgress });
+        const waitDeferred = Utils.wait(1, { onProgress });
 
         waitDeferred.execute(0);
 
@@ -66,7 +68,7 @@ describe('Utils', () => {
       });
 
       it('should resolve the promise once the required number of seconds has elapsed', async () => {
-        const waitDeferred = wait(1);
+        const waitDeferred = Utils.wait(1);
 
         waitDeferred.execute(1000);
 
@@ -80,7 +82,7 @@ describe('Utils', () => {
       it('should return a Deferred promise', () => {
         const animated = { weight: 0 };
 
-        expect(AnimUtils.interpolate(animated, 'weight', 1)).toBeInstanceOf(
+        expect(Utils.Anim.interpolate(animated, 'weight', 1)).toBeInstanceOf(
           Deferred
         );
       });
@@ -89,7 +91,7 @@ describe('Utils', () => {
         const animated = { weight: 'abc' };
 
         await expect(
-          AnimUtils.interpolate(animated, 'weight', 1)
+          Utils.Anim.interpolate(animated, 'weight', 1)
         ).rejects.toThrowError();
       });
 
@@ -98,7 +100,7 @@ describe('Utils', () => {
 
         await expect(
           // @ts-expect-error targetValue is supposed to be non-numeric
-          AnimUtils.interpolate(animated, 'weight', 'abc')
+          Utils.Anim.interpolate(animated, 'weight', 'abc')
         ).rejects.toThrowError();
       });
 
@@ -106,13 +108,13 @@ describe('Utils', () => {
         const animated = { weight: 0 };
 
         await expect(
-          AnimUtils.interpolate(animated, 'weight', 1)
+          Utils.Anim.interpolate(animated, 'weight', 1)
         ).resolves.toBeUndefined();
 
         expect(animated.weight).toEqual(1);
 
         await expect(
-          AnimUtils.interpolate(animated, 'weight', 2, { ms: 0 })
+          Utils.Anim.interpolate(animated, 'weight', 2, { ms: 0 })
         ).resolves.toBeUndefined();
 
         expect(animated.weight).toEqual(2);
@@ -121,7 +123,7 @@ describe('Utils', () => {
       describe('execute', () => {
         it('should reject the promise if a non-numeric deltaTime argument is passed', async () => {
           const animated = { weight: 0 };
-          const interpolator = AnimUtils.interpolate(animated, 'weight', 1, {
+          const interpolator = Utils.Anim.interpolate(animated, 'weight', 1, {
             ms: 1000,
           });
 
@@ -133,7 +135,7 @@ describe('Utils', () => {
         it('should execute the onProgress functiuon argument', () => {
           const animated = { weight: 0 };
           const onProgress = vi.fn();
-          const interpolator = AnimUtils.interpolate(animated, 'weight', 1, {
+          const interpolator = Utils.Anim.interpolate(animated, 'weight', 1, {
             ms: 1000,
             onProgress,
           });
@@ -144,7 +146,7 @@ describe('Utils', () => {
 
         it('should resolve the promise once the target value is reached and seconds has elapsed', async () => {
           const animated = { weight: 0 };
-          const interpolator = AnimUtils.interpolate(animated, 'weight', 1, {
+          const interpolator = Utils.Anim.interpolate(animated, 'weight', 1, {
             ms: 1000,
           });
           interpolator.execute(1000);

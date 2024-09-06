@@ -1,12 +1,22 @@
 import AbstractHostFeature from '../AbstractHostFeature';
 import Deferred from '../Deferred';
 import Utils, { throwErr } from '../utils';
+import RandomAnimState from './state/RandomAnimState';
+import SingleState from './state/SingleState';
 import AnimationLayer from './AnimationLayer';
-import type { AnimationLayerOpts } from './AnimationLayer';
-import SingleState, { SingleStateOpts } from './state/SingleState';
+
+import type { AnimationLayerOpts, BlendMode } from './AnimationLayer';
+import type { RandomAnimStateOpts } from './state/RandomAnimState';
+import type { SingleStateOpts } from './state/SingleState';
+
+type RandomAnimStateCreationOpts = Omit<RandomAnimStateOpts, 'subStates'> & {
+  subStatesOpts?: SingleStateOpts[];
+  blendMode?: BlendMode;
+};
 
 export type AnimationTypes = {
   Single: SingleStateOpts;
+  Random: RandomAnimStateCreationOpts;
 };
 
 /**
@@ -183,8 +193,18 @@ export default class AnimationFeature<
   //#region State creation
 
   /** Return a new instance of a SingleState. */
-  _createSingleState(opts: SingleStateOpts) {
+  _createSingleState(opts: AnimationTypes['Single']) {
     return new SingleState(opts);
+  }
+
+  /** Return a new instance of a RandomAnimState */
+  _createRandomAnimState(opts: AnimationTypes['Random']) {
+    return new RandomAnimState({
+      ...opts,
+      subStates: opts.subStatesOpts?.map((it) =>
+        this._createSingleState({ ...it, blendMode: opts.blendMode })
+      ),
+    });
   }
 
   //#endregion
@@ -204,7 +224,7 @@ export default class AnimationFeature<
     animType: TAnim,
     opts: AnimationTypes[TAnim] = {}
   ): string {
-    animName = this.#validateNewAnimation(layerName, animName);
+    opts.name = this.#validateNewAnimation(layerName, animName);
 
     const layer = this.#layerMap.get(layerName)!;
 
@@ -213,9 +233,10 @@ export default class AnimationFeature<
         case 'Single':
           return this._createSingleState({
             ...opts,
-            name: animName,
             blendMode: layer.blendMode,
           });
+        case 'Random':
+          return this._createRandomAnimState({ ...opts });
         default:
           throwErr(
             `Trying to add unknown animation type ${animType} on layer ${layerName}`

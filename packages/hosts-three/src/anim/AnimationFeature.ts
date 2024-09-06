@@ -6,8 +6,17 @@ import {
 } from 'hosts-core/anim';
 import SingleState, { SingleStateOpts } from './state/SingleState';
 
-export type AnimationTypes = CoreAnimationTypes & {
-  Single: Omit<SingleStateOpts & { clip: THREE.AnimationClip }, 'threeAction'>;
+export type AnimationTypes = Omit<CoreAnimationTypes, 'Single' | 'Random'> & {
+  Single: Omit<
+    CoreAnimationTypes['Single'] & { clip: THREE.AnimationClip },
+    'threeAction'
+  >;
+  Random: Omit<CoreAnimationTypes['Random'], 'subStatesOpts'> & {
+    subStatesOpts: Omit<
+      SingleStateOpts & { clip: THREE.AnimationClip },
+      'threeAction'
+    >[];
+  };
 };
 
 export default class AnimationFeature extends CoreAnimationFeature<THREE.Object3D> {

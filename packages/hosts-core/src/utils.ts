@@ -55,6 +55,23 @@ const Utils = {
   },
 
   /**
+   * Get a random float between a min (inclusive) and max (exclusive) value
+   */
+  getRandomFLoat(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  },
+
+  /**
+   * Get a random integer between a min (inclusive) and max (exclusive) value
+   */
+  getRandomInt(min: number, max: number) {
+    min = Math.ceil(min);
+    max = Math.ceil(max);
+
+    return Math.floor(Math.random() * (max - min) + min);
+  },
+
+  /**
    * Return a deferred promise that will wait a given number of seconds before
    * resolving. Pass delta time in milliseconds to the deferred promise's execute
    * method in an update loop to progress time.

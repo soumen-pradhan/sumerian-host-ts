@@ -51,6 +51,10 @@ export default class AbstractState {
     return this.#weight;
   }
 
+  protected set weight(wt) {
+    this.#weight = wt;
+  }
+
   /** Updates the user defined weight over time. */
   setWeight(weight: number, ms = 0, easingFn?: EasingFn) {
     weight = Utils.Math.clamp(weight);
@@ -62,9 +66,6 @@ export default class AbstractState {
       this._promises.weight = Utils.Anim.interpolate(this, 'weight', weight, {
         ms,
         easingFn,
-        onProgress(progress) {
-          console.log('[progress]', progress);
-        },
       }) as unknown as Deferred<void>;
     }
 
@@ -88,9 +89,9 @@ export default class AbstractState {
   /** Update any values that need to be evaluated every frame. */
   update(deltaMs: number) {
     if (!this.paused) {
-      this._promises.finish.execute(deltaMs);
-      this._promises.weight.execute(deltaMs);
-      this._promises.play.execute(deltaMs);
+      Object.values(this._promises).forEach((promise) =>
+        promise.execute(deltaMs)
+      );
     }
   }
 

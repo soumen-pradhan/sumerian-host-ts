@@ -40,6 +40,10 @@ export default class SingleState extends AbstractState {
     return this.#timeScale;
   }
 
+  protected set timeScale(time) {
+    this.#timeScale = time;
+  }
+
   /** Gets whether or not the timeScale is currently being animated. */
   get timeScalePending() {
     return this._promises.timeScale.pending;

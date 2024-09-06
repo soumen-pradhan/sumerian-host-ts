@@ -7,6 +7,10 @@ import IStateContainer from './IStateContainer';
 import TransitionState from './TransitionState';
 import { impl } from '../../utils';
 
+interface Updatable {
+  update?(deltaMs: number): void;
+}
+
 /**
  * Class factory interface for controlling playback of a collection of animations.
  * One animation can be played at any given time, crossfading between animations
@@ -89,7 +93,9 @@ export default abstract class IAnimationPlayer {
   abstract discard(): void;
 
   /** Contains an init function */
-  static Mixin<TBase extends Constructor<IStateContainer>>(Base: TBase) {
+  static Mixin<TBase extends Constructor<IStateContainer & Updatable>>(
+    Base: TBase
+  ) {
     return class IAnimationPlayerImpl extends Base implements IAnimationPlayer {
       #transitionState = new TransitionState();
       #currentState?: AbstractState;
@@ -276,7 +282,8 @@ export default abstract class IAnimationPlayer {
         return this.#currentState?.stop() ?? false;
       }
 
-      update(delatMs: number): void {
+      override update(delatMs: number): void {
+        super.update?.(delatMs);
         this.#currentState?.update(delatMs);
       }
 
