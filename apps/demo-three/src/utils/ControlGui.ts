@@ -1,11 +1,11 @@
-import { Object3D } from 'three';
+import * as THREE from 'three';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 
 export default class ControlGui {
   #gui: GUI;
-  #model: Object3D;
+  #model: THREE.Object3D;
 
-  constructor(name: string, model: Object3D, localGui: GUI) {
+  constructor(name: string, model: THREE.Object3D, localGui: GUI) {
     this.#gui = localGui.addFolder(name);
     this.#gui.close();
     this.#model = model;
@@ -44,5 +44,26 @@ export default class ControlGui {
     this.#model.visible = show;
     this.#gui.add(this.#model, 'visible');
     return this;
+  }
+
+  wireframe(show = true) {
+    const param = { wireframe: show };
+
+    function showWireframe(model: THREE.Object3D, show: boolean) {
+      model.traverse((child) => {
+        if (!(child as THREE.Mesh).isMesh) return;
+
+        let mat = (child as THREE.Mesh).material;
+        if (!Array.isArray(mat)) mat = [mat];
+
+        for (const m of mat) (m as THREE.MeshBasicMaterial).wireframe = show;
+      });
+    }
+
+    showWireframe(this.#model, show);
+
+    this.#gui
+      .add(param, 'wireframe')
+      .onChange((v) => showWireframe(this.#model, v));
   }
 }
