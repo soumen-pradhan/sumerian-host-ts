@@ -29,7 +29,8 @@ const PATH = {
 
 let GLOBAL_GUI: GUI | undefined;
 
-function gui(m: ConstructorParameters<typeof ControlGui>[1], g = GLOBAL_GUI) {
+function gui(m: THREE.Object3D, g = GLOBAL_GUI) {
+  Object.defineProperty(window, m.name, { value: m });
   return new ControlGui(m.name, m, g!);
 }
 
@@ -138,7 +139,20 @@ function createScene() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      resizeFn.forEach((fn) => fn({ renderDOM: renderer.domElement, scene }));
+      resizeFn.forEach((fn) =>
+        fn({
+          gl: renderer,
+          scene,
+          camera,
+          clock,
+          size: {
+            width: renderer.domElement.clientWidth,
+            height: renderer.domElement.clientHeight,
+            top: renderer.domElement.clientTop,
+            left: renderer.domElement.clientLeft,
+          },
+        })
+      );
     },
     false
   );
@@ -212,7 +226,21 @@ function createScene() {
 
     stats.begin();
 
-    renderFn.forEach((fn) => fn({ deltaS: clock.getDelta() }));
+    renderFn.forEach((fn) =>
+      fn({
+        gl: renderer,
+        scene,
+        camera,
+        clock,
+        size: {
+          width: renderer.domElement.clientWidth,
+          height: renderer.domElement.clientHeight,
+          top: renderer.domElement.clientTop,
+          left: renderer.domElement.clientLeft,
+        },
+        deltaS: clock.getDelta(),
+      })
+    );
     orbitControls.update();
     renderer.render(scene, camera);
 
@@ -448,29 +476,69 @@ function createHost({
 
   // Layer 'Blink'
   {
-    anim.addLayer('Blink', { blendMode: 'Additive' });
+    anim.addLayer('Blink', { blendMode: 'Additive', transitionMs: 75 });
 
-    anim.addAnimation('Blink', 'blink', 'Single', {
-      clip: THREE.AnimationUtils.makeClipAdditive(clip.blink.blink_med),
+    // TODO. bug: setTimeout, so that the action is played after the
+    // first requestAnimationFrame call, else it will not run. Only for LoopOnce,
+    // if infinitely repeating, then no issue
+    setTimeout(() => {
+      anim.addAnimation('Blink', 'blink', 'Random', {
+        playIntervalMs: 5000,
+        subStatesOpts: [
+          clip.blink.blink_fast,
+          clip.blink.blink_med,
+          clip.blink.blink_slow,
+        ].map((clip) => {
+          THREE.AnimationUtils.makeClipAdditive(clip);
+          return {
+            name: clip.name,
+            loopCount: 1,
+            clip,
+          };
+        }),
+      });
+
+      anim.playAnimation('Blink', 'blink');
+    }, 1000);
+  }
+
+  // Talking Idle
+  {
+    anim.addLayer('Talk', {
+      transitionMs: 750,
+      blendMode: 'Additive',
     });
 
-    // anim.addAnimation('Blink', 'blink', 'Random', {
-    //   playIntervalMs: 1000,
-    //   subStatesOpts: [
-    //     clip.blink.blink_fast,
-    //     clip.blink.blink_med,
-    //     clip.blink.blink_slow,
-    //   ].map((clip) => {
-    //     THREE.AnimationUtils.makeClipAdditive(clip);
-    //     return {
-    //       name: clip.name,
-    //       loopCount: Infinity,
-    //       clip,
-    //     };
-    //   }),
-    // });
+    anim.setLayerWeight('Talk', 0);
+    const talkClip = clip.lipsync.stand_talk;
 
-    anim.playAnimation('Blink', 'blink');
+    anim.addAnimation('Talk', talkClip.name, 'Single', {
+      clip: THREE.AnimationUtils.makeClipAdditive(talkClip),
+    });
+
+    anim.playAnimation('Talk', talkClip.name);
+  }
+
+  // Gesture animations
+  {
+    anim.addLayer('Gesture', {
+      transitionMs: 500,
+      blendMode: 'Additive',
+    });
+
+    for (const [name, value] of Object.entries(clip.gesture)) {
+      THREE.AnimationUtils.makeClipAdditive(value);
+      anim.addAnimation('Gesture', name, 'Single', { clip: value });
+    }
+  }
+
+  // Emote aniamtions
+  {
+    anim.addLayer('Emote', { transitionMs: 500 });
+
+    for (const [name, value] of Object.entries(clip.emote)) {
+      anim.addAnimation('Emote', name, 'Single', { clip: value, loopCount: 1 });
+    }
   }
 
   //#endregion
