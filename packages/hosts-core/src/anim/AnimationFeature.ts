@@ -1,3 +1,5 @@
+import * as TWEEN from '@tweenjs/tween.js';
+
 import AbstractHostFeature from '../AbstractHostFeature';
 import Deferred from '../Deferred';
 import Utils, { throwErr } from '../utils';
@@ -186,6 +188,32 @@ export default class AnimationFeature<
     layer.name = newName;
 
     return newName;
+  }
+
+  /**
+   * Update the weight of an animation layer.
+   * @param name The name of the layer to update.
+   * @param weight Should be in 0-1 range.
+   * @param ms Default is 0 and weight will be set immediately.
+   * @param easingFn Default in {@link TWEEN.Easing.Linear.None}
+   * @returns Promise that will resolve once layer's weight reaches target value.
+   */
+  setLayerWeight(
+    name: string,
+    weight: number,
+    ms = 0,
+    easingFn = TWEEN.Easing.Linear.None
+  ): Deferred<void> {
+    const layer = this.#layerMap.get(name);
+
+    if (layer === undefined) {
+      const e =
+        `Cannot set weight on layer ${name} from host ${this.host.id}. ` +
+        `No such layer exists`;
+      return Deferred.rejected(e);
+    }
+
+    return layer.setWeight(weight, ms, easingFn);
   }
 
   //#endregion
