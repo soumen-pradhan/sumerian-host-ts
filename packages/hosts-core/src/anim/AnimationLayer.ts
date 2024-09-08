@@ -128,7 +128,8 @@ export default class AnimationLayer extends IAnimationPlayer.Mixin(
     this.currentState?.updateInternalWeight(this.#internalWeight);
   }
 
-  protected override get internalWeight(): number {
+  // @ts-expect-error getter vs property
+  override get internalWeight(): number {
     return this.#internalWeight;
   }
 

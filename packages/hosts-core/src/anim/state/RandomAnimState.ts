@@ -104,11 +104,6 @@ export default class RandomAnimState extends IAnimationPlayer.Mixin(
     this.discardStates();
   }
 
-  // @ts-expect-error ggg
-  override get internalWeight(): number {
-    return this.currentState?.internalWeight ?? 0;
-  }
-
   /**
    * Reset the internal timer for animation play interval
    */

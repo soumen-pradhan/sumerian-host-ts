@@ -5,7 +5,6 @@ import Deferred from '../../Deferred';
 import AbstractState from './AbstractState';
 import IStateContainer from './IStateContainer';
 import TransitionState from './TransitionState';
-import { impl } from '../../utils';
 
 interface Updatable {
   update?(deltaMs: number): void;
@@ -144,10 +143,7 @@ export default abstract class IAnimationPlayer {
         return this.#currentState === this.#transitionState;
       }
 
-      // @ts-expect-error Mimicing an abstract method
-      protected get internalWeight(): number {
-        impl();
-      }
+      declare internalWeight: number;
 
       _prepareCurrentState(
         name: string,
