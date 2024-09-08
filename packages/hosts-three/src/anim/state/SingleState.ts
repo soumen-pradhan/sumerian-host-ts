@@ -96,6 +96,10 @@ export default class SingleState extends CoreSingleState {
     return super.setTimeScale(timeScale, ms, easingFn);
   }
 
+  override get loopCount() {
+    return super.loopCount;
+  }
+
   override set loopCount(loop: number) {
     super.loopCount = loop;
     this.#threeAction.loop = loop === 1 ? THREE.LoopOnce : THREE.LoopRepeat;
