@@ -224,19 +224,22 @@ export default class AnimationFeature<
     animType: TAnim,
     opts: AnimationTypes[TAnim] = {}
   ): string {
-    opts.name = this.#validateNewAnimation(layerName, animName);
-
     const layer = this.#layerMap.get(layerName)!;
+
+    opts.name = this.#validateNewAnimation(layerName, animName);
+    opts.blendMode = layer.blendMode;
 
     const state = (() => {
       switch (animType) {
         case 'Single':
           return this._createSingleState({
             ...opts,
-            blendMode: layer.blendMode,
           });
         case 'Random':
-          return this._createRandomAnimState({ ...opts });
+          return this._createRandomAnimState({
+            ...opts,
+            transitionMs: (opts as AnimationTypes['Random']).transitionMs,
+          });
         default:
           throwErr(
             `Trying to add unknown animation type ${animType} on layer ${layerName}`

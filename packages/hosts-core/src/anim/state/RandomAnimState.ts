@@ -8,6 +8,7 @@ import Deferred from '../../Deferred';
 import SingleState from './SingleState';
 
 export type RandomAnimStateOpts = AbstractStateOpts & {
+  transitionMs?: number;
   playIntervalMs?: number;
   subStates?: SingleState[];
 };
@@ -26,7 +27,7 @@ export default class RandomAnimState extends IAnimationPlayer.Mixin(
 
   constructor(opts: RandomAnimStateOpts) {
     super(opts);
-    this.IAnimationPlayerInit();
+    this.IAnimationPlayerInit({ transitionMs: opts.transitionMs });
 
     this.playIntervalMs = opts.playIntervalMs ?? 3;
     opts.subStates?.forEach((state) => this.addState(state));
