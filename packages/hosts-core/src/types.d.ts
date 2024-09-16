@@ -1,3 +1,6 @@
+/** Make the given keys optional */
+type PartialKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 // default value of T should be {} not any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor<T = object> = new (...args: any[]) => T;
@@ -27,3 +30,43 @@ type EasingFunctionGroup = {
 };
 
 type InterpolationFn = (v: number[], k: number) => number;
+
+type GestureConfig = Record<
+  string,
+  {
+    queueOptions: {
+      name: string;
+      from: number;
+      to: number;
+      loopCount?: number;
+    }[];
+  }
+>;
+
+type PoiConfig = {
+  name: string;
+  maxSpeed: number;
+  reference: string;
+  forwardAxis: string;
+  hasSaccade: boolean;
+  animation: string;
+  blendStateOptions: {
+    clip: string;
+    name: string;
+  }[];
+  blendThresholds: [number, number][];
+}[];
+
+type PoiConfigInMem = {
+  name: string;
+  maxSpeed: number;
+  reference: object;
+  forwardAxis: string;
+  hasSaccade: boolean;
+  animation: string;
+  blendStateOptions: {
+    clip: object;
+    name: string;
+  }[];
+  blendThresholds: [number, number][];
+}[];
