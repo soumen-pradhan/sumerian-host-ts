@@ -27,7 +27,7 @@ export async function snowing(scene: THREE.Scene, img: string) {
 
   varying vec2 vUv;
 
-  #define LIGHT_SNOW // Comment this out for a blizzard
+  // #define LIGHT_SNOW // Comment this out for a blizzard
 
   #ifdef LIGHT_SNOW
     #define LAYERS 50
@@ -51,7 +51,7 @@ export async function snowing(scene: THREE.Scene, img: string) {
     float acc = 0.0;
     float dof = 4.0 * sin(iTime * 0.1);
 
-    for (int i = 0; i < LAYERS; i++) {
+    for (int i = 2; i < LAYERS; i++) {
       float fi = float(i);
 
       vec2 q = uv * (1.0 + fi * DEPTH);
@@ -80,8 +80,16 @@ export async function snowing(scene: THREE.Scene, img: string) {
   void main() {
     vec2 uv = -1.0 + 2.0 * vUv;
 
+    vec4 textureColor = texture2D(bg, vUv);
     float snowOut = snowing(uv, vUv);
-    gl_FragColor = mix(texture2D(bg, vUv), vec4(1.0), snowOut);
+
+    float luminance = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
+    float threshold = 0.1;
+
+    float snowFactor = smoothstep(threshold, 1.0, luminance);
+    snowOut = snowFactor * snowOut;
+
+    gl_FragColor = mix(textureColor * vec4(1.01), vec4(1.0), snowOut);
   }
 
 `;
