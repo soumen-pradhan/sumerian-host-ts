@@ -7,10 +7,11 @@ import { GLTF, GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import GUI from 'three/examples/jsm/libs/lil-gui.module.min.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 
-import { HostObject } from 'hosts-three';
+import { HostObject, PointOfInterestFeature } from 'hosts-three';
 import { AnimationFeature } from 'hosts-three/anim';
 
 import { ControlGui, Color } from './utils';
+import { imgBg } from './extras';
 
 //#region Globals
 
@@ -24,6 +25,10 @@ const PATH = {
     lipsync: 'assets/glTF/animations/adult_male/lipsync.glb',
     stand_idle: 'assets/glTF/animations/adult_male/stand_idle.glb',
     poi: 'assets/glTF/animations/adult_male/poi.glb',
+  },
+  texture: {
+    cafe: '__ignore/textures/cafe-interior-bg.jpg',
+    wood: '__ignore/textures/wood_table_worn.jpg',
   },
 } as const;
 
@@ -57,13 +62,47 @@ async function main() {
   GLOBAL_GUI = new GUI();
 
   const { renderLoop, scene, camera, clock } = createScene();
+
+  // const { snow, render } = await snowing(scene, PATH.texture.cafe);
+  // gui(snow).pos().scale().rot();
+  // renderFn.push(render);
+
+  // const { resize } = videoBg(scene);
+  // resizeFn.push(resize);
+
+  imgBg(scene, PATH.texture.cafe).then(({ resize }) => resizeFn.push(resize));
+
   const { luke, clip } = await loadModels({ scene, path: PATH });
 
-  createHost({
-    three: { camera, clock, scene },
-    owner: luke,
-    clip,
-  });
+  //#region Create Host for features
+
+  // const ModelConstants = {
+  //   audioAttachJoint1: 'chardef_c_neckB',
+  //   audioAttachJoint2: 'charhead',
+  //   lookJoint1: 'charjx_c_look',
+  //   lookJoint2: 'chargaze',
+  // };
+
+  // const lukeAudioAttach =
+  //   luke.getObjectByName(ModelConstants.audioAttachJoint1) ??
+  //   throwErr(`Prop ${ModelConstants.audioAttachJoint1} not on luke model`);
+
+  // const lukeLookJoint =
+  //   luke.getObjectByName(ModelConstants.lookJoint1) ??
+  //   throwErr(`Prop ${ModelConstants.lookJoint1} not on luke model`);
+
+  // const gestureConfig: GestureConfig[] = [];
+  // const poiConfig: PoiConfig = [];
+
+  // createHost({
+  //   three: { camera, clock, scene },
+  //   owner: luke,
+  //   clip,
+  //   joint: { audioAttach: lukeAudioAttach, look: lukeLookJoint },
+  //   config: { gesture: gestureConfig, poi: poiConfig },
+  // });
+
+  //#endregion
 
   // Animate the render loop only after everything is loaded.
 
@@ -409,10 +448,14 @@ function createHost({
   three,
   owner,
   clip,
+  joint,
+  config,
 }: {
   three: { camera: THREE.Camera; clock: THREE.Clock; scene: THREE.Scene };
   owner: GLTF['scene'];
   clip: Awaited<ReturnType<typeof loadModels>>['clip'];
+  joint: { audioAttach: THREE.Object3D; look: THREE.Object3D };
+  config: { gesture: unknown[]; poi: PoiConfig };
 }) {
   const host = new HostObject({ owner, clock: three.clock });
   renderFn.push(() => host.update());
@@ -540,6 +583,38 @@ function createHost({
       anim.addAnimation('Emote', name, 'Single', { clip: value, loopCount: 1 });
     }
   }
+
+  //#endregion
+
+  //#region Set up POI
+
+  for (const poi of config.poi) {
+    anim.addLayer(poi.name, { blendMode: 'Additive' });
+
+    // Find each pose clip and make it additive
+    for (const opts of poi.blendStateOptions) {
+      const poiClip = clip.poi[opts.clip as keyof (typeof clip)['poi']];
+      if (!poiClip) continue;
+
+      THREE.AnimationUtils.makeClipAdditive(poiClip);
+      THREE.AnimationUtils.subclip(poiClip, poiClip.name, 1, 2, 30);
+    }
+
+    // anim.addAnimation(poi.name, poi.animation, )
+  }
+
+  const poi = new PointOfInterestFeature(
+    host,
+    {
+      target: three.camera,
+      lookTracker: joint.look,
+      scene: three.scene,
+    },
+    { layers: config.poi },
+    { layers: [{ name: 'Blink' }] }
+  );
+
+  host.addFeature(poi);
 
   //#endregion
 
