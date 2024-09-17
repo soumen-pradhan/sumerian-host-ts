@@ -2,6 +2,7 @@
   "name": "demo-three",
   "version": "0.0.1",
   "main": "./src/main.ts",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
