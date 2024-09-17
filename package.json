@@ -19,6 +19,7 @@
   ],
   "scripts": {
     "dev:three": "npm run dev --workspace=apps/demo-three",
+    "dev:r3f": "npm run dev --workspace=apps/demo-r3f",
     "test": "vitest",
     "test:run": "vitest run",
     "fmt": "prettier --write .",
