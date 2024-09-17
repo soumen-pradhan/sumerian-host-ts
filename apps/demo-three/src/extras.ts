@@ -27,6 +27,7 @@ export async function snowing(scene: THREE.Scene, img: string) {
 
   varying vec2 vUv;
 
+  // #define SMOOTH // To filter out window softly
   // #define LIGHT_SNOW // Comment this out for a blizzard
 
   #ifdef LIGHT_SNOW
@@ -81,18 +82,25 @@ export async function snowing(scene: THREE.Scene, img: string) {
     vec2 uv = -1.0 + 2.0 * vUv;
 
     vec4 textureColor = texture2D(bg, vUv);
+    textureColor.rgb = pow(textureColor.rgb, vec3(1.0 / 1.8)); // gamma correction
     float snowOut = snowing(uv, vUv);
 
     float luminance = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
-    float threshold = 0.1;
-
-    float snowFactor = smoothstep(threshold, 1.0, luminance);
+    
+    #ifdef SMOOTH
+      float threshold = 0.1;
+      float snowFactor = smoothstep(threshold, 1.0, luminance);
+    #else
+      float threshold = 0.5;
+      float snowFactor = step(threshold, luminance);
+    #endif
+    
     snowOut = snowFactor * snowOut;
 
-    gl_FragColor = mix(textureColor * vec4(1.01), vec4(1.0), snowOut);
+    gl_FragColor = mix(textureColor, vec4(1.0), snowOut);
   }
 
-`;
+  `;
 
   //#endregion
 
