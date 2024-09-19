@@ -7,9 +7,11 @@ import { GLTF, GLTFLoader } from 'three/examples/jsm/Addons.js';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 
-import type { MeshProps } from '@react-three/fiber';
+import { HostObject } from 'hosts-three';
+import { AnimationFeature } from 'hosts-three/anim';
 
 import Color from './utils/Color';
+import { Bg } from './extras';
 
 //#region Globals
 
@@ -33,24 +35,11 @@ const PATH = {
 //#endregion
 
 export default function App() {
-  const camRef = useRef<THREE.PerspectiveCamera>(null);
-
-  useEffect(() => {
-    camRef.current?.lookAt?.(0, 1.5, 0);
-  }, []);
-
   return (
     <Suspense fallback={null}>
-      <Canvas
-        scene={{
-          background: Color.SLATE_700,
-          fog: new THREE.Fog(Color.SLATE_700),
-        }}
-      >
+      <Canvas>
         <CreateScene />
-        <Bg />
-        {/* <Snowing img={PATH.texture.cafe} /> */}
-        {/* <Box position={[0, 0, 0]} /> */}
+        <Bg img={PATH.texture.cafe} />
 
         <LoadModels />
       </Canvas>
@@ -156,6 +145,19 @@ function CreateScene() {
 function LoadModels() {
   const luke = useLoader(GLTFLoader, PATH.character);
 
+  const clipsRaw = useLoader(GLTFLoader, [
+    PATH.animation.blink,
+    PATH.animation.emote,
+    PATH.animation.face_idle,
+    PATH.animation.gesture,
+    PATH.animation.lipsync,
+    PATH.animation.stand_idle,
+    PATH.animation.poi,
+  ]);
+
+  const hostRef = useRef<HostObject | null>(null);
+  const { camera, clock, scene } = useThree();
+
   useEffect(() => {
     luke.scene.name = 'luke';
 
@@ -165,180 +167,209 @@ function LoadModels() {
         child.castShadow = true;
       }
     });
-  }, [luke]);
+
+    const clip = loadClips(clipsRaw, luke);
+    hostRef.current = createHost({
+      three: { camera, clock, scene },
+      owner: luke.scene,
+      clip,
+    });
+  }, [luke, clipsRaw]);
+
+  useFrame(() => {
+    hostRef.current?.update?.();
+  });
 
   return <primitive object={luke.scene}></primitive>;
 }
 
-function Bg() {
-  const bgTex = useLoader(THREE.TextureLoader, PATH.texture.cafe);
-  bgTex.colorSpace = THREE.SRGBColorSpace;
-  bgTex.wrapS = bgTex.wrapT = THREE.RepeatWrapping;
-  const { scene, gl } = useThree();
+function loadClips(clipsRaw: GLTF[], luke: GLTF) {
+  const anim = clipsRaw.map((cl) => cl.animations);
 
-  new ResizeObserver((entries) => {
-    for (const e of entries) {
-      const canvasAspect = e.contentRect.width / e.contentRect.height;
-      const image = bgTex.image as HTMLImageElement;
-      const imageAspect = image.width / image.height;
-      const factor = imageAspect / canvasAspect;
+  // Make the offset pose additive
+  const [bindPoseOffset] = luke.animations as (
+    | THREE.AnimationClip
+    | undefined
+  )[];
+  if (bindPoseOffset) {
+    THREE.AnimationUtils.makeClipAdditive(bindPoseOffset);
+  }
 
-      // When factor larger than 1, that means texture 'wilder' than target。
-      // we should scale texture height to target height and then 'map' the center  of texture to target， and vice versa.
-      bgTex.offset.x = factor > 1 ? (1 - 1 / factor) / 2 : 0;
-      bgTex.repeat.x = factor > 1 ? 1 / factor : 1;
-      bgTex.offset.y = factor > 1 ? 0 : (1 - factor) / 2;
-      bgTex.repeat.y = factor > 1 ? 1 : factor;
-    }
-  }).observe(gl.domElement);
-
-  useEffect(() => {
-    scene.background = bgTex;
-  }, [bgTex, scene]);
-
-  return null;
+  return {
+    blink: {
+      blink_fast: anim[0][0],
+      blink_med: anim[0][1],
+      blink_slow: anim[0][2],
+    },
+    emote: { applause: anim[1][0], bored: anim[1][1], cheer: anim[1][2] },
+    face_idle: anim[2][0],
+    gesture: {
+      aggressive: anim[3][0],
+      big: anim[3][1],
+      defense: anim[3][2],
+      generic_a: anim[3][3],
+      generic_b: anim[3][4],
+      generic_c: anim[3][5],
+      heart: anim[3][6],
+      in: anim[3][7],
+      many: anim[3][8],
+      movement: anim[3][9],
+      one: anim[3][10],
+      self: anim[3][11],
+      wave: anim[3][12],
+      you: anim[3][13],
+    },
+    lipsync: {
+      '@': anim[4][0],
+      a: anim[4][1],
+      e: anim[4][2],
+      E: anim[4][3],
+      f: anim[4][4],
+      i: anim[4][5],
+      k: anim[4][6],
+      o: anim[4][7],
+      O: anim[4][8],
+      p: anim[4][9],
+      r: anim[4][10],
+      s: anim[4][11],
+      S: anim[4][12],
+      sil: anim[4][13],
+      stand_talk: anim[4][14],
+      T: anim[4][15],
+      t: anim[4][16],
+      u: anim[4][17],
+    },
+    stand_idle: anim[5][0],
+    poi: {
+      brows_d: anim[6][0],
+      brows_dl: anim[6][1],
+      brows_dr: anim[6][2],
+      brows_l: anim[6][3],
+      brows_neutral: anim[6][4],
+      brows_r: anim[6][5],
+      brows_u: anim[6][6],
+      brows_ul: anim[6][7],
+      brows_ur: anim[6][8],
+      eyes_d: anim[6][9],
+      eyes_dl: anim[6][10],
+      eyes_dr: anim[6][11],
+      eyes_l: anim[6][12],
+      eyes_neutral: anim[6][13],
+      eyes_r: anim[6][14],
+      eyes_u: anim[6][15],
+      eyes_ul: anim[6][16],
+      eyes_ur: anim[6][17],
+      head_d: anim[6][18],
+      head_dl: anim[6][19],
+      head_dr: anim[6][20],
+      head_l: anim[6][21],
+      head_neutral: anim[6][22],
+      head_r: anim[6][23],
+      head_u: anim[6][24],
+      head_ul: anim[6][25],
+      head_ur: anim[6][26],
+    },
+    bindPoseOffset,
+  };
 }
 
-function Snowing(props: MeshProps & { img: string }) {
-  const bgTex = useLoader(THREE.TextureLoader, props.img);
-  bgTex.colorSpace = THREE.SRGBColorSpace;
-  bgTex.wrapS = bgTex.wrapT = THREE.RepeatWrapping;
+function createHost({
+  three,
+  owner,
+  clip,
+}: {
+  three: { camera: THREE.Camera; clock: THREE.Clock; scene: THREE.Scene };
+  owner: GLTF['scene'];
+  clip: ReturnType<typeof loadClips>;
+}) {
+  const host = new HostObject({ owner, clock: three.clock });
 
-  //#region Shader
+  //#region Animation
 
-  // https://stackoverflow.com/questions/24820004/how-to-implement-a-shadertoy-shader-in-three-js
-  // https://www.shadertoy.com/view/ldsGDn
+  const anim = new AnimationFeature(host);
+  host.addFeature(anim);
 
-  const vertexShader = /* glsl */ `
+  // Layers 'Base', 'Face', 'BindPoseOffset'
+  // Required for the model to look not deformed
+  {
+    {
+      anim.addLayer('Base');
 
-  varying vec2 vUv;
+      anim.addAnimation('Base', clip.stand_idle.name, 'Single', {
+        clip: clip.stand_idle,
+      });
 
-  void main() {
-    vUv = uv;
-
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-  }
-
-  `;
-
-  const fragmentShader = /* glsl */ `
-
-  uniform float iTime;
-  uniform sampler2D bg;
-
-  varying vec2 vUv;
-
-  // #define LIGHT_SNOW // Comment this out for a blizzard
-
-  #ifdef LIGHT_SNOW
-    #define LAYERS 50
-    #define DEPTH .5
-    #define WIDTH .3
-    #define SPEED .6
-  #else // BLIZZARD
-    #define LAYERS 200
-    #define DEPTH .1
-    #define WIDTH .8
-    #define SPEED 1.5
-  #endif
-
-  float snowing(vec2 uv, vec2 fragCoord) {
-    const mat3 p = mat3(
-      13.323122, 23.5112, 21.71123,
-      21.1212,   28.7312, 11.9312,
-      21.8112,   14.7212, 61.3934
-    );
-
-    float acc = 0.0;
-    float dof = 4.0 * sin(iTime * 0.1);
-
-    for (int i = 2; i < LAYERS; i++) {
-      float fi = float(i);
-
-      vec2 q = uv * (1.0 + fi * DEPTH);
-      q += vec2(
-        q.y * (WIDTH * mod(fi * 7.238917, 1.0) - WIDTH * 0.5),
-        SPEED * iTime / 1.0 + fi * DEPTH * 0.03
-      );
-
-      vec3 n = vec3(floor(q), 31.189 + fi);
-      vec3 m = floor(n) * 0.00001 + fract(n);
-      vec3 mp = (31415.9 + m) / fract(m * p);
-      vec3 r = fract(mp);
-
-      vec2 s = abs(mod(q, 1.0) - 0.5 + 0.9 * r.xy - 0.45);
-      s += 0.01 * abs(2.0 * fract(10.0 * q.yx) - 1.0);
-
-      float d = 0.6 * max(s.x - s.y, s.x + s.y) + max(s.x, s.y) - 0.01;
-      float edge = 0.005 + 0.05 * min(0.5 * abs(fi - 5.0 - dof), 1.0);
-
-      acc += smoothstep(edge, -edge, d) * (r.x / (1.0 + 0.02 * fi * DEPTH));
+      anim.playAnimation('Base', clip.stand_idle.name);
     }
 
-    return acc;
+    {
+      anim.addLayer('Face', { blendMode: 'Additive' });
+
+      const faceSubClip = THREE.AnimationUtils.subclip(
+        clip.face_idle,
+        clip.face_idle.name,
+        1,
+        clip.face_idle.duration * 30,
+        30
+      );
+
+      anim.addAnimation('Face', clip.face_idle.name, 'Single', {
+        clip: THREE.AnimationUtils.makeClipAdditive(faceSubClip),
+      });
+
+      anim.playAnimation('Face', clip.face_idle.name);
+    }
+
+    if (clip.bindPoseOffset !== undefined) {
+      anim.addLayer('BindPoseOffset', {
+        blendMode: 'Additive',
+      });
+
+      const bindPoseSubClip = THREE.AnimationUtils.subclip(
+        clip.bindPoseOffset,
+        clip.bindPoseOffset.name,
+        1,
+        2,
+        30
+      );
+
+      anim.addAnimation('BindPoseOffset', clip.bindPoseOffset.name, 'Single', {
+        clip: bindPoseSubClip,
+      });
+
+      anim.playAnimation('BindPoseOffset', clip.bindPoseOffset.name);
+    }
   }
 
-  void main() {
-    vec2 uv = -1.0 + 2.0 * vUv;
+  // Layer 'Blink'
+  {
+    anim.addLayer('Blink', { blendMode: 'Additive', transitionMs: 75 });
 
-    vec4 textureColor = texture2D(bg, vUv);
-    float snowOut = snowing(uv, vUv);
+    // TODO. bug: setTimeout, so that the action is played after the
+    // first requestAnimationFrame call, else it will not run. Only for LoopOnce,
+    // if infinitely repeating, then no issue
+    setTimeout(() => {
+      anim.addAnimation('Blink', 'blink', 'Random', {
+        playIntervalMs: 5000,
+        subStatesOpts: [
+          clip.blink.blink_fast,
+          clip.blink.blink_med,
+          clip.blink.blink_slow,
+        ].map((clip) => {
+          THREE.AnimationUtils.makeClipAdditive(clip);
+          return {
+            name: clip.name,
+            loopCount: 1,
+            clip,
+          };
+        }),
+      });
 
-    float luminance = dot(textureColor.rgb, vec3(0.299, 0.587, 0.114));
-    float threshold = 0.1;
-
-    float snowFactor = smoothstep(threshold, 1.0, luminance);
-    snowOut = snowFactor * snowOut;
-
-    gl_FragColor = mix(textureColor * vec4(1.01), vec4(1.0), snowOut);
+      anim.playAnimation('Blink', 'blink');
+    }, 1000);
   }
-
-  `;
 
   //#endregion
 
-  const uniforms = {
-    iTime: { value: 0.1 },
-    bg: { value: bgTex },
-  } satisfies THREE.ShaderMaterialParameters['uniforms'];
-
-  useFrame((state, delta) => {
-    uniforms.iTime.value += delta;
-  });
-
-  return (
-    <mesh position={[0, 1.5, -0.8]} scale={[6, 6, 6]}>
-      <planeGeometry args={[0.6, 0.6]} />
-      <shaderMaterial
-        uniforms={uniforms}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        side={THREE.FrontSide}
-      />
-    </mesh>
-  );
-}
-
-function Box(props: MeshProps) {
-  const meshRef = useRef<THREE.Mesh>(null!);
-
-  const [hovered, setHover] = useState(false);
-  const [active, setActive] = useState(false);
-
-  useFrame((_state, delta) => (meshRef.current.rotation.x += delta));
-
-  return (
-    <mesh
-      {...props}
-      ref={meshRef}
-      scale={active ? 1.5 : 1}
-      onClick={() => setActive(!active)}
-      onPointerOver={() => setHover(true)}
-      onPointerOut={() => setHover(false)}
-    >
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
-    </mesh>
-  );
+  return host;
 }
